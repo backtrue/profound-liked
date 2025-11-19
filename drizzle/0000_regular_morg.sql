@@ -23,14 +23,28 @@ CREATE TABLE `analysisSessions` (
 	CONSTRAINT `analysisSessions_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
+CREATE TABLE `apiKeys` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`provider` enum('openai','perplexity','google') NOT NULL,
+	`apiKey` text NOT NULL,
+	`isActive` boolean NOT NULL DEFAULT true,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `apiKeys_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
 CREATE TABLE `brandMentions` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`responseId` int NOT NULL,
-	`brandName` varchar(255) NOT NULL,
-	`rankPosition` int,
+	`brandName` varchar(200) NOT NULL,
 	`sentimentScore` int NOT NULL,
-	`isSarcastic` boolean NOT NULL DEFAULT false,
+	`rankPosition` int,
+	`isSarcastic` boolean DEFAULT false,
 	`context` text,
+	`recommendationStrength` enum('strong_positive','positive','neutral','negative','strong_negative'),
+	`mentionContext` enum('comparison','review','qa','purchase_advice','tutorial','other'),
+	`llmAnalysis` text,
 	`createdAt` timestamp NOT NULL DEFAULT (now()),
 	CONSTRAINT `brandMentions_id` PRIMARY KEY(`id`)
 );
@@ -71,6 +85,10 @@ CREATE TABLE `engineResponses` (
 	`engineId` int NOT NULL,
 	`rawContent` text NOT NULL,
 	`citations` json,
+	`hallucinationScore` int,
+	`hallucinationConfidence` enum('high','medium','low'),
+	`hallucinationIssues` json,
+	`hallucinationSummary` text,
 	`createdAt` timestamp NOT NULL DEFAULT (now()),
 	CONSTRAINT `engineResponses_id` PRIMARY KEY(`id`)
 );
@@ -85,6 +103,19 @@ CREATE TABLE `projects` (
 	`createdAt` timestamp NOT NULL DEFAULT (now()),
 	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	CONSTRAINT `projects_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `sarcasmCorpus` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`market` enum('taiwan','japan') NOT NULL,
+	`platform` varchar(50) NOT NULL,
+	`text` text NOT NULL,
+	`explanation` text,
+	`category` enum('irony','sarcasm','understatement','exaggeration','other') NOT NULL,
+	`createdBy` int NOT NULL,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `sarcasmCorpus_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
 CREATE TABLE `seedKeywords` (
@@ -103,4 +134,18 @@ CREATE TABLE `targetEngines` (
 	`isActive` boolean NOT NULL DEFAULT true,
 	`createdAt` timestamp NOT NULL DEFAULT (now()),
 	CONSTRAINT `targetEngines_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `users` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`openId` varchar(64) NOT NULL,
+	`name` text,
+	`email` varchar(320),
+	`loginMethod` varchar(64),
+	`role` enum('user','admin') NOT NULL DEFAULT 'user',
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	`lastSignedIn` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `users_id` PRIMARY KEY(`id`),
+	CONSTRAINT `users_openId_unique` UNIQUE(`openId`)
 );

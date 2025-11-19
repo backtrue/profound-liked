@@ -254,6 +254,77 @@ export default function AnalysisResult() {
           </CardContent>
         </Card>
 
+        {/* Hallucination Stats Card */}
+        {metrics.hallucinationStats && metrics.hallucinationStats.totalAnalyzed > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                AI 幻覺指數
+              </CardTitle>
+              <CardDescription>
+                檢測 AI 回應中的事實準確性與可信度
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {metrics.hallucinationStats.averageScore !== null && (
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span>平均幻覺指數</span>
+                      <span className="font-medium">
+                        {metrics.hallucinationStats.averageScore}/100
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full ${
+                          metrics.hallucinationStats.averageScore >= 70
+                            ? "bg-red-500"
+                            : metrics.hallucinationStats.averageScore >= 40
+                            ? "bg-yellow-500"
+                            : "bg-green-500"
+                        }`}
+                        style={{ width: `${metrics.hallucinationStats.averageScore}%` }}
+                      />
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {metrics.hallucinationStats.averageScore < 40
+                        ? "低風險：回應具有高可信度"
+                        : metrics.hallucinationStats.averageScore < 70
+                        ? "中風險：建議交叉驗證資訊"
+                        : "高風險：需要謹慎查證事實"}
+                    </div>
+                  </div>
+                )}
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {metrics.hallucinationStats.lowRiskCount}
+                    </div>
+                    <div className="text-xs text-gray-600">低風險</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-yellow-600">
+                      {metrics.hallucinationStats.mediumRiskCount}
+                    </div>
+                    <div className="text-xs text-gray-600">中風險</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-red-600">
+                      {metrics.hallucinationStats.highRiskCount}
+                    </div>
+                    <div className="text-xs text-gray-600">高風險</div>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 text-center">
+                  共分析 {metrics.hallucinationStats.totalAnalyzed} 筆回應
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Citation Analysis */}
         <Card>
           <CardHeader>

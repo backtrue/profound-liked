@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "5",
-      "when": 1763533226928,
-      "tag": "0000_nervous_colonel_america",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1763533573409,
-      "tag": "0001_simple_firebird",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1763533593789,
-      "tag": "0002_giant_blindfold",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "5",
-      "when": 1763535071082,
-      "tag": "0003_even_pestilence",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "5",
-      "when": 1763536832739,
-      "tag": "0004_absent_tarantula",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "5",
-      "when": 1763537551106,
-      "tag": "0005_busy_iceman",
+      "when": 1763539147172,
+      "tag": "0000_regular_morg",
       "breakpoints": true
     }
   ]

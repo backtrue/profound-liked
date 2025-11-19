@@ -102,6 +102,16 @@ export const engineResponses = mysqlTable("engineResponses", {
   engineId: int("engineId").notNull(),
   rawContent: text("rawContent").notNull(),
   citations: json("citations").$type<string[]>(),
+  // Hallucination detection
+  hallucinationScore: int("hallucinationScore"), // 0-100
+  hallucinationConfidence: mysqlEnum("hallucinationConfidence", ["high", "medium", "low"]),
+  hallucinationIssues: json("hallucinationIssues").$type<Array<{
+    type: string;
+    severity: string;
+    description: string;
+    excerpt: string;
+  }>>(),
+  hallucinationSummary: text("hallucinationSummary"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

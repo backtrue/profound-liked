@@ -3,6 +3,8 @@ import { queryEngine } from "./aiEngines";
 import type { SeedKeyword, TargetEngine, ApiKey } from "../drizzle/schema";
 import { emitProgress, emitError } from "./_core/socket";
 import { analyzeBrandMentions } from "./llmBrandAnalysis";
+import { detectHallucination } from "./hallucinationDetection";
+import { generateAndSaveStrategicActions } from "./strategicActionEngine";
 
 interface BatchTestParams {
   sessionId: number;
@@ -99,6 +101,18 @@ export async function executeBatchTests(params: BatchTestParams): Promise<void> 
           // Query the engine
           const response = await queryEngine(provider, apiKey, query.queryText);
           
+          // Detect hallucination
+          let hallucinationAnalysis;
+          try {
+            hallucinationAnalysis = await detectHallucination(
+              query.queryText,
+              response.content,
+              response.citations?.map(c => c.url)
+            );
+          } catch (error) {
+            console.error(`[Hallucination Detection] Failed for query ${query.queryId}:`, error);
+          }
+
           // Save engine response
           const engineResponse = await db.createEngineResponse({
             sessionId,
@@ -106,6 +120,10 @@ export async function executeBatchTests(params: BatchTestParams): Promise<void> 
             engineId: engine.id,
             rawContent: response.content,
             citations: response.citations?.map(c => c.url) || null,
+            hallucinationScore: hallucinationAnalysis?.hallucinationScore ?? null,
+            hallucinationConfidence: hallucinationAnalysis?.confidence ?? null,
+            hallucinationIssues: hallucinationAnalysis?.issues ?? null,
+            hallucinationSummary: hallucinationAnalysis?.summary ?? null,
           });
 
           // Extract citations if available
@@ -208,6 +226,16 @@ export async function executeBatchTests(params: BatchTestParams): Promise<void> 
     // Update session status
     await db.updateAnalysisSessionStatus(sessionId, "completed");
     console.log(`[BatchTest] Session ${sessionId} completed: ${successfulTests} successful, ${failedTests} failed out of ${totalTests} total tests`);
+    
+    // Generate strategic action recommendations
+    try {
+      console.log(`[BatchTest] Generating strategic actions for session ${sessionId}...`);
+      await generateAndSaveStrategicActions(sessionId);
+      console.log(`[BatchTest] Strategic actions generated successfully`);
+    } catch (error) {
+      console.error(`[BatchTest] Failed to generate strategic actions:`, error);
+      // Don't fail the entire session if action generation fails
+    }
     
     // Emit completion progress
     emitProgress(sessionId, {

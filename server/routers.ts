@@ -342,10 +342,23 @@ export const appRouter = router({
             }
           }
           
-          for (const citation of citations) {
+            for (const citation of citations) {
             citationAnalysis[citation.sourceType] = (citationAnalysis[citation.sourceType] || 0) + 1;
           }
         }
+        
+        // Calculate hallucination stats
+        const hallucinationScores = responses
+          .filter(r => r.hallucinationScore !== null)
+          .map(r => r.hallucinationScore!);
+        
+        const avgHallucinationScore = hallucinationScores.length > 0
+          ? Math.round(hallucinationScores.reduce((sum, score) => sum + score, 0) / hallucinationScores.length)
+          : null;
+        
+        const highRiskCount = hallucinationScores.filter(s => s >= 70).length;
+        const mediumRiskCount = hallucinationScores.filter(s => s >= 40 && s < 70).length;
+        const lowRiskCount = hallucinationScores.filter(s => s < 40).length;
         
         return {
           sessionId: input.sessionId,
@@ -355,6 +368,13 @@ export const appRouter = router({
             sentimentBreakdown,
           },
           citationAnalysis,
+          hallucinationStats: {
+            averageScore: avgHallucinationScore,
+            highRiskCount,
+            mediumRiskCount,
+            lowRiskCount,
+            totalAnalyzed: hallucinationScores.length,
+          },
           actionPlan: actionItems,
         };
       }),

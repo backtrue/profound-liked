@@ -11,8 +11,32 @@ export default function AnalysisResult() {
   const [, params] = useRoute("/analysis/:id");
   const sessionId = params?.id ? parseInt(params.id) : 0;
 
-  const { data: session, isLoading: sessionLoading } = trpc.analysis.getById.useQuery({ sessionId });
-  const { data: metrics, isLoading: metricsLoading } = trpc.analysis.getMetrics.useQuery({ sessionId });
+  const { data: session, isLoading: sessionLoading } = trpc.analysis.getById.useQuery(
+    { sessionId },
+    { enabled: sessionId > 0 }
+  );
+  const { data: metrics, isLoading: metricsLoading } = trpc.analysis.getMetrics.useQuery(
+    { sessionId },
+    { enabled: sessionId > 0 }
+  );
+
+  // Validate sessionId
+  if (sessionId === 0) {
+    return (
+      <div className="container py-8">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="text-center space-y-4">
+              <div className="text-muted-foreground">無效的分析 ID</div>
+              <Link href="/projects">
+                <Button variant="outline">返回專案列表</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (sessionLoading || metricsLoading) {
     return (

@@ -13,6 +13,25 @@ export default function AnalysisReport() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [report, setReport] = useState<string | null>(null);
 
+  // Validate sessionId
+  if (sessionId === 0) {
+    return (
+      <div className="container py-8">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="text-center space-y-4">
+              <div className="text-muted-foreground">無效的分析 ID</div>
+              <Button onClick={() => window.history.back()} variant="outline">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                返回
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const generateReportMutation = trpc.analysis.generateReport.useMutation({
     onSuccess: (data) => {
       setReport(data.report);

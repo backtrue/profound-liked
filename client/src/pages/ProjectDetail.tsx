@@ -23,11 +23,25 @@ export default function ProjectDetail() {
   const { data: sessions, refetch: refetchSessions } = trpc.analysis.listByProject.useQuery({ projectId });
 
   const createKeyword = trpc.seedKeyword.create.useMutation({
-    onSuccess: () => {
-      toast.success("關鍵字已新增");
+    onSuccess: async (data) => {
+      toast.success("關鍵字已新增，正在生成測試問句...");
       setIsAddKeywordDialogOpen(false);
+      const keywordText = keyword.trim();
       setKeyword("");
       refetchKeywords();
+      
+      // Auto-generate queries after creating keyword
+      if (project) {
+        try {
+          await generateQueries.mutateAsync({
+            seedKeywordId: data.id,
+            seedKeyword: keywordText,
+            targetMarket: project.targetMarket,
+          });
+        } catch (error) {
+          // Error already handled by mutation
+        }
+      }
     },
     onError: (error) => {
       toast.error(`新增失敗：${error.message}`);
@@ -37,6 +51,7 @@ export default function ProjectDetail() {
   const generateQueries = trpc.queryGeneration.generate.useMutation({
     onSuccess: (data) => {
       toast.success(`已生成 ${data.total} 個測試問句（模板：${data.template}，AI：${data.aiCreative}）`);
+      refetchKeywords();
     },
     onError: (error) => {
       toast.error(`生成失敗：${error.message}`);
@@ -93,6 +108,14 @@ export default function ProjectDetail() {
   };
 
   const handleStartAnalysis = () => {
+    // Check if there are any queries generated
+    const totalQueries = seedKeywords?.reduce((sum, kw) => sum + (kw.queryCount || 0), 0) || 0;
+    
+    if (totalQueries === 0) {
+      toast.error("請先新增關鍵字並生成測試問句");
+      return;
+    }
+    
     createSession.mutate({ projectId });
   };
 
@@ -211,28 +234,37 @@ export default function ProjectDetail() {
                   <Card key={kw.id}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">{kw.keyword}</CardTitle>
-                        <Button
-                          size="sm"
-                          onClick={() => handleGenerateQueries(kw.id, kw.keyword)}
-                          disabled={generateQueries.isPending}
-                        >
-                          {generateQueries.isPending ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              生成中...
-                            </>
-                          ) : (
-                            <>
-                              <PlayCircle className="mr-2 h-4 w-4" />
-                              生成測試問句
-                            </>
-                          )}
-                        </Button>
+                        <div className="space-y-1">
+                          <CardTitle className="text-lg">{kw.keyword}</CardTitle>
+                          <CardDescription>
+                            建立於 {new Date(kw.createdAt).toLocaleDateString("zh-TW")}
+                            {kw.queryCount !== undefined && (
+                              <span className="ml-2">
+                                · 已生成 <strong>{kw.queryCount}</strong> 個問句
+                              </span>
+                            )}
+                          </CardDescription>
+                        </div>
+                        {(!kw.queryCount || kw.queryCount === 0) && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleGenerateQueries(kw.id, kw.keyword)}
+                            disabled={generateQueries.isPending}
+                          >
+                            {generateQueries.isPending ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                生成中...
+                              </>
+                            ) : (
+                              <>
+                                <PlayCircle className="mr-2 h-4 w-4" />
+                                生成測試問句
+                              </>
+                            )}
+                          </Button>
+                        )}
                       </div>
-                      <CardDescription>
-                        建立於 {new Date(kw.createdAt).toLocaleDateString("zh-TW")}
-                      </CardDescription>
                     </CardHeader>
                   </Card>
                 ))}

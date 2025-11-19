@@ -88,7 +88,20 @@ export const appRouter = router({
     listByProject: protectedProcedure
       .input(z.object({ projectId: z.number() }))
       .query(async ({ input }) => {
-        return db.getSeedKeywordsByProjectId(input.projectId);
+        const keywords = await db.getSeedKeywordsByProjectId(input.projectId);
+        
+        // Get query count for each keyword
+        const keywordsWithCount = await Promise.all(
+          keywords.map(async (kw) => {
+            const queries = await db.getDerivativeQueriesBySeedKeywordId(kw.id);
+            return {
+              ...kw,
+              queryCount: queries.length,
+            };
+          })
+        );
+        
+        return keywordsWithCount;
       }),
   }),
 

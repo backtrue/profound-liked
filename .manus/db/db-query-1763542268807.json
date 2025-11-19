@@ -1,0 +1,20 @@
+{
+  "query": "SELECT sk.id, sk.keyword, COUNT(dq.id) as query_count \nFROM seedKeywords sk \nLEFT JOIN derivativeQueries dq ON sk.id = dq.seedKeywordId \nWHERE sk.projectId = (SELECT projectId FROM analysisSessions WHERE id = 1)\nGROUP BY sk.id, sk.keyword;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2iyb7T7XBaHHgi3.0b5e78d12b02 --database Wn5966Umo3E3MfrFwb4EY7 --execute SELECT sk.id, sk.keyword, COUNT(dq.id) as query_count \nFROM seedKeywords sk \nLEFT JOIN derivativeQueries dq ON sk.id = dq.seedKeywordId \nWHERE sk.projectId = (SELECT projectId FROM analysisSessions WHERE id = 1)\nGROUP BY sk.id, sk.keyword;",
+  "rows": [
+    {
+      "id": "1",
+      "keyword": "曲奇餅",
+      "query_count": "20"
+    },
+    {
+      "id": "2",
+      "keyword": "堅果塔",
+      "query_count": "20"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tkeyword\tquery_count\n1\t曲奇餅\t20\n2\t堅果塔\t20\n",
+  "stderr": "",
+  "execution_time_ms": 1632
+}

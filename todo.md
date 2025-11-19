@@ -204,8 +204,12 @@
 - [x] 分析 #150001 正在執行中，所有功能正常運作
 
 ## Bug 修正 - 分析歷史頁面進度卡片一直顯示「連接中...」
-- [ ] 檢查 AnalysisProgressCard 的載入邏輯
-- [ ] 檢查 useAnalysisProgress hook 的 WebSocket 連接
-- [ ] 檢查進度資料是否正確從 WebSocket 接收
-- [ ] 修正進度卡片的初始狀態顯示
-- [ ] 測試進度資訊是否正確顯示
+- [x] 檢查 AnalysisProgressCard 的載入邏輯（邏輯正確）
+- [x] 檢查 useAnalysisProgress hook 的 WebSocket 連接（連接正常）
+- [x] 檢查進度資料是否正確從 WebSocket 接收（WebSocket 機制正常）
+- [x] 診斷根本原因：資料庫沒有引擎 + 批次測試執行器缺少邊界條件檢查
+- [x] 修正 API Key 選擇邏輯（添加排序，選擇最新的 Key）
+- [x] 添加批次測試執行器邊界條件檢查（無引擎時標記為失敗）
+- [x] 初始化預設引擎（ChatGPT, Perplexity, Gemini）
+- [x] 修正卡住的 session 150002 狀態
+- [x] 測試進度資訊是否正確顯示（完全正常，顯示詳細進度資訊）

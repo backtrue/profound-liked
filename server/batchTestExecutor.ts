@@ -126,6 +126,25 @@ async function executeBatchTestsInternal(params: BatchTestParams): Promise<void>
       return;
     }
 
+    // Check if there are any engines to test
+    if (targetEngines.length === 0) {
+      await db.updateAnalysisSessionStatus(sessionId, "failed");
+      await db.createExecutionLog({
+        sessionId,
+        level: "error",
+        message: "沒有啟用的引擎可測試，分析失敗",
+        details: { engineCount: 0 },
+      });
+      console.log(`[BatchTest] No engines to test, marking session as failed`);
+      
+      // Emit error to frontend
+      emitError(sessionId, {
+        message: "沒有啟用的引擎可測試。請前往 API 設定頁面配置至少一個引擎。",
+      });
+      
+      return;
+    }
+
     // Map user API keys to providers
     const providerMap = new Map<string, string>();
     for (const key of userApiKeys) {

@@ -19,7 +19,7 @@ interface BatchTestParams {
 
 // Rate limit configuration for different providers
 const RATE_LIMITS: Record<string, { delayMs: number; maxRetries: number }> = {
-  gemini: { delayMs: 7000, maxRetries: 3 }, // 7 seconds delay for Gemini free tier (max 10 req/min)
+  gemini: { delayMs: 12000, maxRetries: 5 }, // 12 seconds delay for Gemini free tier (max 10 req/min with buffer)
   openai: { delayMs: 1000, maxRetries: 3 }, // 1 second delay for OpenAI
   perplexity: { delayMs: 1000, maxRetries: 3 }, // 1 second delay for Perplexity
 };
@@ -30,14 +30,26 @@ function isRetryableError(error: any): boolean {
   return errorMessage.includes('503') || errorMessage.includes('429') || errorMessage.includes('overloaded');
 }
 
-// Helper function to extract retry delay from error message
-function getRetryDelay(error: any): number {
+// Helper function to calculate exponential backoff retry delay with jitter
+function getRetryDelay(error: any, attempt: number): number {
   const errorMessage = error instanceof Error ? error.message : String(error);
+  
+  // Check if error message contains suggested retry delay
   const match = errorMessage.match(/retry in (\d+)/);
   if (match && match[1]) {
     return parseInt(match[1]) * 1000; // Convert seconds to milliseconds
   }
-  return 5000; // Default 5 seconds
+  
+  // Exponential backoff: 5s, 10s, 20s, 40s, 80s
+  const baseDelay = 5000;
+  const exponentialDelay = baseDelay * Math.pow(2, attempt);
+  
+  // Add random jitter (±20%) to avoid thundering herd
+  const jitter = exponentialDelay * 0.2 * (Math.random() - 0.5);
+  const finalDelay = Math.floor(exponentialDelay + jitter);
+  
+  // Cap at 2 minutes
+  return Math.min(finalDelay, 120000);
 }
 
 /**
@@ -210,7 +222,7 @@ async function executeBatchTestsInternal(params: BatchTestParams): Promise<void>
               lastError = error;
               
               if (attempt < rateLimit.maxRetries && isRetryableError(error)) {
-                const retryDelay = getRetryDelay(error);
+                const retryDelay = getRetryDelay(error, attempt);
                 console.log(`[BatchTest] Retry attempt ${attempt + 1}/${rateLimit.maxRetries} after ${retryDelay}ms for query: ${query.queryText.substring(0, 50)}...`);
                 
                 await db.createExecutionLog({

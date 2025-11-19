@@ -1,0 +1,90 @@
+{
+  "query": "SELECT * FROM executionLogs WHERE sessionId = 90002 AND level = 'error' ORDER BY id DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2iyb7T7XBaHHgi3.0b5e78d12b02 --database Wn5966Umo3E3MfrFwb4EY7 --execute SELECT * FROM executionLogs WHERE sessionId = 90002 AND level = 'error' ORDER BY id DESC LIMIT 20;",
+  "rows": [
+    {
+      "id": "60055",
+      "sessionId": "90002",
+      "level": "error",
+      "message": "查詢失敗：CP值最高的曲奇餅推薦 PTT Dcard...",
+      "details": "{\"engineName\": \"Gemini\", \"error\": \"Gemini API error: 503 - {\\n  \\\"error\\\": {\\n    \\\"code\\\": 503,\\n    \\\"message\\\": \\\"The model is overloaded. Please try again later.\\\",\\n    \\\"status\\\": \\\"UNAVAILABLE\\\"\\n  }\\n}\\n\", \"queryId\": 11, \"queryText\": \"CP值最高的曲奇餅推薦 PTT Dcard\"}",
+      "createdAt": "2025-11-19 13:10:57"
+    },
+    {
+      "id": "60051",
+      "sessionId": "90002",
+      "level": "error",
+      "message": "查詢失敗：曲奇餅 評測...",
+      "details": "{\"engineName\": \"Gemini\", \"error\": \"Gemini API error: 503 - {\\n  \\\"error\\\": {\\n    \\\"code\\\": 503,\\n    \\\"message\\\": \\\"The model is overloaded. Please try again later.\\\",\\n    \\\"status\\\": \\\"UNAVAILABLE\\\"\\n  }\\n}\\n\", \"queryId\": 10, \"queryText\": \"曲奇餅 評測\"}",
+      "createdAt": "2025-11-19 13:10:32"
+    },
+    {
+      "id": "60047",
+      "sessionId": "90002",
+      "level": "error",
+      "message": "查詢失敗：曲奇餅 使用心得...",
+      "details": "{\"engineName\": \"Gemini\", \"error\": \"Gemini API error: 503 - {\\n  \\\"error\\\": {\\n    \\\"code\\\": 503,\\n    \\\"message\\\": \\\"The model is overloaded. Please try again later.\\\",\\n    \\\"status\\\": \\\"UNAVAILABLE\\\"\\n  }\\n}\\n\", \"queryId\": 8, \"queryText\": \"曲奇餅 使用心得\"}",
+      "createdAt": "2025-11-19 13:09:45"
+    },
+    {
+      "id": "60043",
+      "sessionId": "90002",
+      "level": "error",
+      "message": "查詢失敗：曲奇餅 價格比較...",
+      "details": "{\"engineName\": \"Gemini\", \"error\": \"Gemini API error: 503 - {\\n  \\\"error\\\": {\\n    \\\"code\\\": 503,\\n    \\\"message\\\": \\\"The model is overloaded. Please try again later.\\\",\\n    \\\"status\\\": \\\"UNAVAILABLE\\\"\\n  }\\n}\\n\", \"queryId\": 7, \"queryText\": \"曲奇餅 價格比較\"}",
+      "createdAt": "2025-11-19 13:09:09"
+    },
+    {
+      "id": "60039",
+      "sessionId": "90002",
+      "level": "error",
+      "message": "查詢失敗：曲奇餅 優缺點...",
+      "details": "{\"engineName\": \"Gemini\", \"error\": \"Gemini API error: 503 - {\\n  \\\"error\\\": {\\n    \\\"code\\\": 503,\\n    \\\"message\\\": \\\"The model is overloaded. Please try again later.\\\",\\n    \\\"status\\\": \\\"UNAVAILABLE\\\"\\n  }\\n}\\n\", \"queryId\": 6, \"queryText\": \"曲奇餅 優缺點\"}",
+      "createdAt": "2025-11-19 13:08:43"
+    },
+    {
+      "id": "60035",
+      "sessionId": "90002",
+      "level": "error",
+      "message": "查詢失敗：曲奇餅 哪裡買...",
+      "details": "{\"engineName\": \"Gemini\", \"error\": \"Gemini API error: 503 - {\\n  \\\"error\\\": {\\n    \\\"code\\\": 503,\\n    \\\"message\\\": \\\"The model is overloaded. Please try again later.\\\",\\n    \\\"status\\\": \\\"UNAVAILABLE\\\"\\n  }\\n}\\n\", \"queryId\": 5, \"queryText\": \"曲奇餅 哪裡買\"}",
+      "createdAt": "2025-11-19 13:08:11"
+    },
+    {
+      "id": "60031",
+      "sessionId": "90002",
+      "level": "error",
+      "message": "查詢失敗：曲奇餅 2025 推薦...",
+      "details": "{\"engineName\": \"Gemini\", \"error\": \"Gemini API error: 503 - {\\n  \\\"error\\\": {\\n    \\\"code\\\": 503,\\n    \\\"message\\\": \\\"The model is overloaded. Please try again later.\\\",\\n    \\\"status\\\": \\\"UNAVAILABLE\\\"\\n  }\\n}\\n\", \"queryId\": 4, \"queryText\": \"曲奇餅 2025 推薦\"}",
+      "createdAt": "2025-11-19 13:07:41"
+    },
+    {
+      "id": "60027",
+      "sessionId": "90002",
+      "level": "error",
+      "message": "查詢失敗：曲奇餅 Mobile01 心得...",
+      "details": "{\"engineName\": \"Gemini\", \"error\": \"Gemini API error: 503 - {\\n  \\\"error\\\": {\\n    \\\"code\\\": 503,\\n    \\\"message\\\": \\\"The model is overloaded. Please try again later.\\\",\\n    \\\"status\\\": \\\"UNAVAILABLE\\\"\\n  }\\n}\\n\", \"queryId\": 3, \"queryText\": \"曲奇餅 Mobile01 心得\"}",
+      "createdAt": "2025-11-19 13:07:09"
+    },
+    {
+      "id": "60023",
+      "sessionId": "90002",
+      "level": "error",
+      "message": "查詢失敗：曲奇餅 Dcard 評價...",
+      "details": "{\"engineName\": \"Gemini\", \"error\": \"Gemini API error: 503 - {\\n  \\\"error\\\": {\\n    \\\"code\\\": 503,\\n    \\\"message\\\": \\\"The model is overloaded. Please try again later.\\\",\\n    \\\"status\\\": \\\"UNAVAILABLE\\\"\\n  }\\n}\\n\", \"queryId\": 2, \"queryText\": \"曲奇餅 Dcard 評價\"}",
+      "createdAt": "2025-11-19 13:06:15"
+    },
+    {
+      "id": "60019",
+      "sessionId": "90002",
+      "level": "error",
+      "message": "查詢失敗：曲奇餅 PTT 推薦...",
+      "details": "{\"engineName\": \"Gemini\", \"error\": \"Gemini API error: 503 - {\\n  \\\"error\\\": {\\n    \\\"code\\\": 503,\\n    \\\"message\\\": \\\"The model is overloaded. Please try again later.\\\",\\n    \\\"status\\\": \\\"UNAVAILABLE\\\"\\n  }\\n}\\n\", \"queryId\": 1, \"queryText\": \"曲奇餅 PTT 推薦\"}",
+      "createdAt": "2025-11-19 13:05:45"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsessionId\tlevel\tmessage\tdetails\tcreatedAt\n60055\t90002\terror\t查詢失敗：CP值最高的曲奇餅推薦 PTT Dcard...\t{\"engineName\": \"Gemini\", \"error\": \"Gemini API error: 503 - {\\n  \\\"error\\\": {\\n    \\\"code\\\": 503,\\n    \\\"message\\\": \\\"The model is overloaded. Please try again later.\\\",\\n    \\\"status\\\": \\\"UNAVAILABLE\\\"\\n  }\\n}\\n\", \"queryId\": 11, \"queryText\": \"CP值最高的曲奇餅推薦 PTT Dcard\"}\t2025-11-19 13:10:57\n60051\t90002\terror\t查詢失敗：曲奇餅 評測...\t{\"engineName\": \"Gemini\", \"error\": \"Gemini API error: 503 - {\\n  \\\"error\\\": {\\n    \\\"code\\\": 503,\\n    \\\"message\\\": \\\"The model is overloaded. Please try again later.\\\",\\n    \\\"status\\\": \\\"UNAVAILABLE\\\"\\n  }\\n}\\n\", \"queryId\": 10, \"queryText\": \"曲奇餅 評測\"}\t2025-11-19 13:10:32\n60047\t90002\terror\t查詢失敗：曲奇餅 使用心得...\t{\"engineName\": \"Gemini\", \"error\": \"Gemini API error: 503 - {\\n  \\\"error\\\": {\\n    \\\"code\\\": 503,\\n    \\\"message\\\": \\\"The model is overloaded. Please try again later.\\\",\\n    \\\"status\\\": \\\"UNAVAILABLE\\\"\\n  }\\n}\\n\", \"queryId\": 8, \"queryText\": \"曲奇餅 使用心得\"}\t2025-11-19 13:09:45\n60043\t90002\terror\t查詢失敗：曲奇餅 價格比較...\t{\"engineName\": \"Gemini\", \"error\": \"Gemini API error: 503 - {\\n  \\\"error\\\": {\\n    \\\"code\\\": 503,\\n    \\\"message\\\": \\\"The model is overloaded. Please try again later.\\\",\\n    \\\"status\\\": \\\"UNAVAILABLE\\\"\\n  }\\n}\\n\", \"queryId\": 7, \"queryText\": \"曲奇餅 價格比較\"}\t2025-11-19 13:09:09\n60039\t90002\terror\t查詢失敗：曲奇餅 優缺點...\t{\"engineName\": \"Gemini\", \"error\": \"Gemini API error: 503 - {\\n  \\\"error\\\": {\\n    \\\"code\\\": 503,\\n    \\\"message\\\": \\\"The model is overloaded. Please try again later.\\\",\\n    \\\"status\\\": \\\"UNAVAILABLE\\\"\\n  }\\n}\\n\", \"queryId\": 6, \"queryText\": \"曲奇餅 優缺點\"}\t2025-11-19 13:08:43\n60035\t90002\terror\t查詢失敗：曲奇餅 哪裡買...\t{\"engineName\": \"Gemini\", \"error\": \"Gemini API error: 503 - {\\n  \\\"error\\\": {\\n    \\\"code\\\": 503,\\n    \\\"message\\\": \\\"The model is overloaded. Please try again later.\\\",\\n    \\\"status\\\": \\\"UNAVAILABLE\\\"\\n  }\\n}\\n\", \"queryId\": 5, \"queryText\": \"曲奇餅 哪裡買\"}\t2025-11-19 13:08:11\n60031\t90002\terror\t查詢失敗：曲奇餅 2025 推薦...\t{\"engineName\": \"Gemini\", \"error\": \"Gemini API error: 503 - {\\n  \\\"error\\\": {\\n    \\\"code\\\": 503,\\n    \\\"message\\\": \\\"The model is overloaded. Please try again later.\\\",\\n    \\\"status\\\": \\\"UNAVAILABLE\\\"\\n  }\\n}\\n\", \"queryId\": 4, \"queryText\": \"曲奇餅 2025 推薦\"}\t2025-11-19 13:07:41\n60027\t90002\terror\t查詢失敗：曲奇餅 Mobile01 心得...\t{\"engineName\": \"Gemini\", \"error\": \"Gemini API error: 503 - {\\n  \\\"error\\\": {\\n    \\\"code\\\": 503,\\n    \\\"message\\\": \\\"The model is overloaded. Please try again later.\\\",\\n    \\\"status\\\": \\\"UNAVAILABLE\\\"\\n  }\\n}\\n\", \"queryId\": 3, \"queryText\": \"曲奇餅 Mobile01 心得\"}\t2025-11-19 13:07:09\n60023\t90002\terror\t查詢失敗：曲奇餅 Dcard 評價...\t{\"engineName\": \"Gemini\", \"error\": \"Gemini API error: 503 - {\\n  \\\"error\\\": {\\n    \\\"code\\\": 503,\\n    \\\"message\\\": \\\"The model is overloaded. Please try again later.\\\",\\n    \\\"status\\\": \\\"UNAVAILABLE\\\"\\n  }\\n}\\n\", \"queryId\": 2, \"queryText\": \"曲奇餅 Dcard 評價\"}\t2025-11-19 13:06:15\n60019\t90002\terror\t查詢失敗：曲奇餅 PTT 推薦...\t{\"engineName\": \"Gemini\", \"error\": \"Gemini API error: 503 - {\\n  \\\"error\\\": {\\n    \\\"code\\\": 503,\\n    \\\"message\\\": \\\"The model is overloaded. Please try again later.\\\",\\n    \\\"status\\\": \\\"UNAVAILABLE\\\"\\n  }\\n}\\n\", \"queryId\": 1, \"queryText\": \"曲奇餅 PTT 推薦\"}\t2025-11-19 13:05:45\n",
+  "stderr": "",
+  "execution_time_ms": 1635
+}

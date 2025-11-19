@@ -154,3 +154,10 @@
 - [x] 顯示通知狀態 Badge（已啟用/已關閉）
 - [x] 撰寫通知功能的單元測試（5 個測試全部通過）
 - [ ] 測試通知功能（重新執行分析驗證）
+
+## Bug 修正 - 分析歷史頁面沒有顯示進度和預估時間
+- [x] 檢查 ProjectDetail 頁面是否渲柔 AnalysisProgressCard（發現沒有渲柔）
+- [x] 在 ProjectDetail 頁面中添加 AnalysisProgressCard 組件
+- [x] 當 session.status === "running" 時顯示進度卡片
+- [x] 修正進度卡片顯示邏輯
+- [ ] 測試即時進度更新功能（重新執行分析驗證）

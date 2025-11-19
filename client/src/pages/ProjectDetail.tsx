@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, PlayCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { AnalysisProgressCard } from "@/components/AnalysisProgressCard";
 
 export default function ProjectDetail() {
   const [, params] = useRoute("/project/:id");
@@ -339,6 +340,11 @@ export default function ProjectDetail() {
                         </Badge>
                       </div>
                     </CardHeader>
+                    {session.status === "running" && (
+                      <CardContent>
+                        <AnalysisProgressCard sessionId={session.id} />
+                      </CardContent>
+                    )}
                     {session.status === "completed" && (
                       <CardContent>
                         <Link href={`/analysis/${session.id}`}>

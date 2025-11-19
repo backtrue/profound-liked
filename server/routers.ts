@@ -153,6 +153,43 @@ export const appRouter = router({
         });
       }),
 
+    // Sarcasm Corpus Management
+    sarcasmCorpus: router({
+      list: protectedProcedure.query(async () => {
+        return db.getAllSarcasmCorpus();
+      }),
+
+      listByMarket: protectedProcedure
+        .input(z.object({ market: z.enum(["taiwan", "japan"]) }))
+        .query(async ({ input }) => {
+          return db.getSarcasmCorpusByMarket(input.market);
+        }),
+
+      create: protectedProcedure
+        .input(
+          z.object({
+            market: z.enum(["taiwan", "japan"]),
+            platform: z.string(),
+            text: z.string(),
+            explanation: z.string().optional(),
+            category: z.enum(["irony", "sarcasm", "understatement", "exaggeration", "other"]),
+          })
+        )
+        .mutation(async ({ ctx, input }) => {
+          return db.createSarcasmCorpusEntry({
+            ...input,
+            createdBy: ctx.user.id,
+          });
+        }),
+
+      delete: protectedProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ ctx, input }) => {
+          await db.deleteSarcasmCorpusEntry(input.id, ctx.user.id);
+          return { success: true };
+        }),
+    }),
+
     generateReport: protectedProcedure
       .input(z.object({ sessionId: z.number() }))
       .mutation(async ({ ctx, input }) => {

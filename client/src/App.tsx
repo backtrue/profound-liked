@@ -10,6 +10,7 @@ import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import AnalysisResult from "./pages/AnalysisResult";
 import ApiKeySettings from "./pages/ApiKeySettings";
+import SarcasmCorpusManager from "./pages/SarcasmCorpusManager";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
       <Route path={"/project/:id"} component={ProjectDetail} />
       <Route path={"/analysis/:id"} component={AnalysisResult} />
       <Route path={"/settings/api-keys"} component={ApiKeySettings} />
+      <Route path={"/settings/sarcasm-corpus"} component={SarcasmCorpusManager} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

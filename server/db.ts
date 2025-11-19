@@ -12,7 +12,8 @@ import {
   citationSources, InsertCitationSource, CitationSource,
   actionItems, InsertActionItem, ActionItem,
   domainCategories, InsertDomainCategory, DomainCategory,
-  apiKeys, InsertApiKey, ApiKey
+  apiKeys, InsertApiKey, ApiKey,
+  sarcasmCorpus, InsertSarcasmCorpus, SarcasmCorpus
 } from "../drizzle/schema";
 import { encrypt, decrypt, maskApiKey } from "./encryption";
 import { ENV } from './_core/env';
@@ -414,4 +415,34 @@ export async function deleteApiKey(keyId: number, userId: number): Promise<void>
   await db.update(apiKeys)
     .set({ isActive: false })
     .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId)));
+}
+
+// Sarcasm Corpus Management
+export async function createSarcasmCorpusEntry(entry: InsertSarcasmCorpus) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(sarcasmCorpus).values(entry);
+  return result;
+}
+
+export async function getAllSarcasmCorpus(): Promise<SarcasmCorpus[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select().from(sarcasmCorpus);
+}
+
+export async function getSarcasmCorpusByMarket(market: "taiwan" | "japan"): Promise<SarcasmCorpus[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select().from(sarcasmCorpus).where(eq(sarcasmCorpus.market, market));
+}
+
+export async function deleteSarcasmCorpusEntry(id: number, userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(sarcasmCorpus).where(and(eq(sarcasmCorpus.id, id), eq(sarcasmCorpus.createdBy, userId)));
 }

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "wouter";
 import { APP_TITLE, getLoginUrl } from "@/const";
-import { TrendingUp, Search, Target, Zap, ArrowRight, BarChart3 } from "lucide-react";
+import { TrendingUp, Search, Target, Zap, ArrowRight, BarChart3, MessageSquare } from "lucide-react";
 
 export default function Home() {
   const { user, isAuthenticated } = useAuth();
@@ -23,6 +23,9 @@ export default function Home() {
                 <span className="text-sm text-muted-foreground">歡迎，{user?.name}</span>
                 <Link href="/settings/api-keys">
                   <Button variant="outline">API 設定</Button>
+                </Link>
+                <Link href="/settings/sarcasm-corpus">
+                  <Button variant="outline">反串語料庫</Button>
                 </Link>
                 <Link href="/projects">
                   <Button>進入控制台</Button>

@@ -1,4 +1,5 @@
 import { invokeLLM } from "./_core/llm";
+import { detectSarcasm } from "./enhancedSarcasmDetection";
 
 interface BrandMentionAnalysis {
   brandName: string;
@@ -93,9 +94,15 @@ ${competitors.join(", ")}
 **注意事項：**
 - 如果品牌未被提及，mentioned 為 false，其他欄位設為 null 或空字串
 - 排名位置只在有明確順序時填寫（例如「推薦順序：A > B > C」）
-- 反串檢測要特別注意台灣/日本網路用語（例如：「超棒der」、「真香」、「神作」等可能是反串）
+- 反串檢測要特別注意台灣/日本網路用語（例如：「超棒der」、「真香」、「神作」、「（笑）」、「棒読み」等可能是反串）
 - 推薦強度要基於整體語氣和用詞，不只看情感分數
-- 改善建議要具體可執行，例如「增加 YouTube 教學影片」而非「提升品牌形象」`;
+- 改善建議要具體可執行，例如「增加 YouTube 教學影片」而非「提升品牌形象」
+
+**台灣常見反串用語：**
+der、真香、笑死、484、87、廠廠、呵呵、業配、棒讀、好啦好啦
+
+**日本常見反串用語：**
+（笑）、棒読み、ステマ、草、www、皮肉、失笑、嘲笑、はいはい`;
 
   try {
     const llmResponse = await invokeLLM({

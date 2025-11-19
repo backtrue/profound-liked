@@ -165,6 +165,24 @@ export type ActionItem = typeof actionItems.$inferSelect;
 export type InsertActionItem = typeof actionItems.$inferInsert;
 
 /**
+ * SarcasmCorpus - 反串語料庫
+ */
+export const sarcasmCorpus = mysqlTable("sarcasmCorpus", {
+  id: int("id").autoincrement().primaryKey(),
+  market: mysqlEnum("market", ["taiwan", "japan"]).notNull(),
+  platform: varchar("platform", { length: 50 }).notNull(), // PTT, Dcard, 2ch, 5ch
+  text: text("text").notNull(), // 反串用語範例
+  explanation: text("explanation"), // 解釋為什麼是反串
+  category: mysqlEnum("category", ["irony", "sarcasm", "understatement", "exaggeration", "other"]).notNull(),
+  createdBy: int("createdBy").notNull(), // user id
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SarcasmCorpus = typeof sarcasmCorpus.$inferSelect;
+export type InsertSarcasmCorpus = typeof sarcasmCorpus.$inferInsert;
+
+/**
  * DomainCategory - 白名單域名分類（用於引用來源分類）
  */
 export const domainCategories = mysqlTable("domainCategories", {

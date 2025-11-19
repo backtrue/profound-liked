@@ -95,3 +95,6 @@
 
 ## Bug 修正 - Gemini API
 - [x] 修正 Gemini API 模型名稱錯誤（使用正確的模型名稱）
+
+## Bug 修正 - 更新 Gemini 模型
+- [x] 將 Gemini 模型名稱更新為 gemini-2.5-flash

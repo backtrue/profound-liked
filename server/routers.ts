@@ -6,6 +6,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 import { queryEngine } from "./aiEngines";
 import { invokeLLM } from "./_core/llm";
+import { executeBatchTests } from "./batchTestExecutor";
 
 export const appRouter = router({
   system: systemRouter,
@@ -149,6 +150,58 @@ export const appRouter = router({
           projectId: input.projectId,
           status: "pending",
         });
+      }),
+
+    runBatchTest: protectedProcedure
+      .input(z.object({
+        sessionId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const session = await db.getAnalysisSessionById(input.sessionId);
+        if (!session) {
+          throw new Error("Analysis session not found");
+        }
+
+        // Update session status to running
+        await db.updateAnalysisSessionStatus(input.sessionId, "running");
+
+        // Get project to determine which engines to use
+        const project = await db.getProjectById(session.projectId);
+        if (!project) {
+          throw new Error("Project not found");
+        }
+
+        // Get all seed keywords and their derivative queries
+        const seedKeywords = await db.getSeedKeywordsByProjectId(project.id);
+        
+        // Get available API keys for the user
+        const userApiKeys = await db.getApiKeysByUserId(ctx.user.id);
+        if (userApiKeys.length === 0) {
+          await db.updateAnalysisSessionStatus(input.sessionId, "failed");
+          throw new Error("No API keys configured. Please add at least one API key in settings.");
+        }
+
+        // Get active target engines
+        const targetEngines = await db.getActiveTargetEngines();
+
+        // Execute tests in background (don't await)
+        executeBatchTests({
+          sessionId: input.sessionId,
+          userId: ctx.user.id,
+          seedKeywords,
+          userApiKeys,
+          targetEngines,
+          brandName: project.brandName,
+          competitors: project.competitors || [],
+        }).catch(async (error: unknown) => {
+          console.error("Batch test execution failed:", error);
+          await db.updateAnalysisSessionStatus(input.sessionId, "failed");
+        });
+
+        return {
+          success: true,
+          message: "Batch test started. This may take several minutes.",
+        };
       }),
 
     listByProject: protectedProcedure

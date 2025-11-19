@@ -44,12 +44,29 @@ export default function ProjectDetail() {
   });
 
   const createSession = trpc.analysis.create.useMutation({
-    onSuccess: () => {
-      toast.success("分析任務已建立");
+    onSuccess: async (data) => {
+      toast.success("分析任務已建立，正在啟動批次測試...");
       refetchSessions();
+      
+      // Immediately run batch test
+      try {
+        await runBatchTest.mutateAsync({ sessionId: data.id });
+      } catch (error) {
+        // Error already handled by mutation
+      }
     },
     onError: (error) => {
       toast.error(`建立失敗：${error.message}`);
+    },
+  });
+
+  const runBatchTest = trpc.analysis.runBatchTest.useMutation({
+    onSuccess: () => {
+      toast.success("批次測試已啟動，請稍後查看結果");
+      refetchSessions();
+    },
+    onError: (error) => {
+      toast.error(`測試啟動失敗：${error.message}`);
     },
   });
 

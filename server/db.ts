@@ -233,6 +233,15 @@ export async function getAnalysisSessionById(sessionId: number): Promise<Analysi
   return result[0];
 }
 
+export async function updateAnalysisSessionStatus(sessionId: number, status: "pending" | "running" | "completed" | "failed"): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(analysisSessions)
+    .set({ status })
+    .where(eq(analysisSessions.id, sessionId));
+}
+
 // ============ Engine Responses ============
 export async function createEngineResponse(response: InsertEngineResponse): Promise<EngineResponse> {
   const db = await getDb();

@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Trash2, ExternalLink, Key } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Projects() {
@@ -81,7 +81,14 @@ export default function Projects() {
             管理您的 GEO 分析專案，追蹤品牌在 AI 搜尋引擎中的表現
           </p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <div className="flex gap-2">
+          <Link href="/settings/api-keys">
+            <Button variant="outline">
+              <Key className="mr-2 h-4 w-4" />
+              API 設定
+            </Button>
+          </Link>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
@@ -145,7 +152,8 @@ export default function Projects() {
               </Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {!projects || projects.length === 0 ? (

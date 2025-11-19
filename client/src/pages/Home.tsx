@@ -21,6 +21,9 @@ export default function Home() {
             {isAuthenticated ? (
               <>
                 <span className="text-sm text-muted-foreground">歡迎，{user?.name}</span>
+                <Link href="/settings/api-keys">
+                  <Button variant="outline">API 設定</Button>
+                </Link>
                 <Link href="/projects">
                   <Button>進入控制台</Button>
                 </Link>

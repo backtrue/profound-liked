@@ -38,3 +38,14 @@
 - [ ] 準備生產環境配置
 - [ ] 建立專案 Checkpoint
 - [ ] 向使用者交付完整系統
+
+## 新增需求：BYOK 多引擎測試整合
+- [x] 設計 API Key 管理資料表與加密儲存機制
+- [x] 實作 API Key 設定介面（使用者可新增/編輯/刪除各引擎的 Key）
+- [x] 實作 ChatGPT API 整合（使用使用者提供的 OpenAI API Key）
+- [x] 實作 Perplexity API 整合（使用使用者提供的 Perplexity API Key）
+- [x] 實作 Gemini API 整合（使用使用者提供的 Google API Key）
+- [ ] 實作引擎測試執行邏輯（批次發送問句並收集回應）
+- [ ] 實作回應解析與品牌提及偵測
+- [ ] 實作引用來源提取與分類
+- [x] 撰寫多引擎整合的單元測試

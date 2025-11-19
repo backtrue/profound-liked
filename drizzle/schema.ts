@@ -173,3 +173,19 @@ export const domainCategories = mysqlTable("domainCategories", {
 
 export type DomainCategory = typeof domainCategories.$inferSelect;
 export type InsertDomainCategory = typeof domainCategories.$inferInsert;
+
+/**
+ * ApiKey - 使用者的 API Key 管理（BYOK）
+ */
+export const apiKeys = mysqlTable("apiKeys", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  provider: mysqlEnum("provider", ["openai", "perplexity", "google"]).notNull(),
+  apiKey: text("apiKey").notNull(), // Encrypted
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ApiKey = typeof apiKeys.$inferSelect;
+export type InsertApiKey = typeof apiKeys.$inferInsert;

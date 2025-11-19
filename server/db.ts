@@ -11,8 +11,10 @@ import {
   brandMentions, InsertBrandMention, BrandMention,
   citationSources, InsertCitationSource, CitationSource,
   actionItems, InsertActionItem, ActionItem,
-  domainCategories, InsertDomainCategory, DomainCategory
+  domainCategories, InsertDomainCategory, DomainCategory,
+  apiKeys, InsertApiKey, ApiKey
 } from "../drizzle/schema";
+import { encrypt, decrypt, maskApiKey } from "./encryption";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -326,4 +328,81 @@ export async function createDomainCategory(category: InsertDomainCategory): Prom
   
   const created = await db.select().from(domainCategories).where(eq(domainCategories.id, insertedId)).limit(1);
   return created[0]!;
+}
+
+// ============ API Keys (BYOK) ============
+export async function createApiKey(userId: number, provider: "openai" | "perplexity" | "google", apiKey: string): Promise<ApiKey> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Encrypt the API key before storing
+  const encryptedKey = encrypt(apiKey);
+
+  const result = await db.insert(apiKeys).values({
+    userId,
+    provider,
+    apiKey: encryptedKey,
+    isActive: true,
+  });
+  
+  const insertedId = Number(result[0].insertId);
+  const created = await db.select().from(apiKeys).where(eq(apiKeys.id, insertedId)).limit(1);
+  return created[0]!;
+}
+
+export async function getApiKeysByUserId(userId: number): Promise<Array<Omit<ApiKey, "apiKey"> & { maskedKey: string }>> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const keys = await db.select().from(apiKeys).where(and(eq(apiKeys.userId, userId), eq(apiKeys.isActive, true)));
+  
+  return keys.map(key => {
+    const decryptedKey = decrypt(key.apiKey);
+    return {
+      id: key.id,
+      userId: key.userId,
+      provider: key.provider,
+      maskedKey: maskApiKey(decryptedKey),
+      isActive: key.isActive,
+      createdAt: key.createdAt,
+      updatedAt: key.updatedAt,
+    };
+  });
+}
+
+export async function getDecryptedApiKey(userId: number, provider: "openai" | "perplexity" | "google"): Promise<string | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.select().from(apiKeys)
+    .where(and(
+      eq(apiKeys.userId, userId),
+      eq(apiKeys.provider, provider),
+      eq(apiKeys.isActive, true)
+    ))
+    .limit(1);
+
+  if (result.length === 0) return null;
+
+  return decrypt(result[0].apiKey);
+}
+
+export async function updateApiKey(keyId: number, userId: number, newApiKey: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const encryptedKey = encrypt(newApiKey);
+
+  await db.update(apiKeys)
+    .set({ apiKey: encryptedKey })
+    .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId)));
+}
+
+export async function deleteApiKey(keyId: number, userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(apiKeys)
+    .set({ isActive: false })
+    .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId)));
 }

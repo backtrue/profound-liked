@@ -4,6 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import * as db from "./db";
+import { queryEngine } from "./aiEngines";
 import { invokeLLM } from "./_core/llm";
 
 export const appRouter = router({
@@ -235,6 +236,59 @@ export const appRouter = router({
     list: protectedProcedure.query(async () => {
       return db.getActiveTargetEngines();
     }),
+  }),
+
+  // ============ API Keys (BYOK) ============
+  apiKey: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return db.getApiKeysByUserId(ctx.user.id);
+    }),
+
+    create: protectedProcedure
+      .input(z.object({
+        provider: z.enum(["openai", "perplexity", "google"]),
+        apiKey: z.string().min(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.createApiKey(ctx.user.id, input.provider, input.apiKey);
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        keyId: z.number(),
+        apiKey: z.string().min(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.updateApiKey(input.keyId, ctx.user.id, input.apiKey);
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ keyId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteApiKey(input.keyId, ctx.user.id);
+        return { success: true };
+      }),
+
+    test: protectedProcedure
+      .input(z.object({
+        provider: z.enum(["openai", "perplexity", "google"]),
+        query: z.string().min(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const apiKey = await db.getDecryptedApiKey(ctx.user.id, input.provider);
+        if (!apiKey) {
+          throw new Error(`No API key found for ${input.provider}`);
+        }
+
+        const { queryEngine } = await import("./aiEngines");
+        const response = await queryEngine(input.provider, apiKey, input.query);
+        
+        return {
+          content: response.content,
+          citations: response.citations || [],
+        };
+      }),
   }),
 });
 

@@ -19,7 +19,7 @@ interface BatchTestParams {
 
 // Rate limit configuration for different providers
 const RATE_LIMITS: Record<string, { delayMs: number; maxRetries: number }> = {
-  gemini: { delayMs: 12000, maxRetries: 5 }, // 12 seconds delay for Gemini free tier (max 10 req/min with buffer)
+  gemini: { delayMs: 2500, maxRetries: 5 }, // 2.5 seconds delay for Gemini 2.0 Flash-Lite (30 RPM with buffer)
   openai: { delayMs: 1000, maxRetries: 3 }, // 1 second delay for OpenAI
   perplexity: { delayMs: 1000, maxRetries: 3 }, // 1 second delay for Perplexity
 };

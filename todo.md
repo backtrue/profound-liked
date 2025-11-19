@@ -37,7 +37,7 @@
 ## Phase 6: 部署與交付
 - [x] 準備生產環境配置
 - [x] 建立專案 Checkpoint
-- [ ] 向使用者交付完整系統
+- [x] 向使用者交付完整系統
 
 ## 新增需求：BYOK 多引擎測試整合
 - [x] 設計 API Key 管理資料表與加密儲存機制
@@ -92,3 +92,6 @@
 ## Bug 修正
 - [x] 修正 Projects 頁面查詢不存在的 sessionId 導致的錯誤
 - [x] 確保所有查詢在資料不存在時正確處理 undefined 情況
+
+## Bug 修正 - Gemini API
+- [x] 修正 Gemini API 模型名稱錯誤（使用正確的模型名稱）

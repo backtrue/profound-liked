@@ -16,6 +16,29 @@ interface BatchTestParams {
   competitors: string[];
 }
 
+// Rate limit configuration for different providers
+const RATE_LIMITS: Record<string, { delayMs: number; maxRetries: number }> = {
+  gemini: { delayMs: 7000, maxRetries: 3 }, // 7 seconds delay for Gemini free tier (max 10 req/min)
+  openai: { delayMs: 1000, maxRetries: 3 }, // 1 second delay for OpenAI
+  perplexity: { delayMs: 1000, maxRetries: 3 }, // 1 second delay for Perplexity
+};
+
+// Helper function to check if error is retryable
+function isRetryableError(error: any): boolean {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  return errorMessage.includes('503') || errorMessage.includes('429') || errorMessage.includes('overloaded');
+}
+
+// Helper function to extract retry delay from error message
+function getRetryDelay(error: any): number {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const match = errorMessage.match(/retry in (\d+)/);
+  if (match && match[1]) {
+    return parseInt(match[1]) * 1000; // Convert seconds to milliseconds
+  }
+  return 5000; // Default 5 seconds
+}
+
 /**
  * Execute batch tests for all derivative queries across all configured engines
  */
@@ -149,8 +172,47 @@ async function executeBatchTestsInternal(params: BatchTestParams): Promise<void>
         });
         
         try {
-          // Query the engine
-          const response = await queryEngine(provider, apiKey, query.queryText);
+          // Get rate limit config for this provider
+          const rateLimit = RATE_LIMITS[provider] || { delayMs: 1000, maxRetries: 3 };
+          
+          // Query the engine with retry logic
+          let response;
+          let lastError;
+          
+          for (let attempt = 0; attempt <= rateLimit.maxRetries; attempt++) {
+            try {
+              response = await queryEngine(provider, apiKey, query.queryText);
+              break; // Success, exit retry loop
+            } catch (error) {
+              lastError = error;
+              
+              if (attempt < rateLimit.maxRetries && isRetryableError(error)) {
+                const retryDelay = getRetryDelay(error);
+                console.log(`[BatchTest] Retry attempt ${attempt + 1}/${rateLimit.maxRetries} after ${retryDelay}ms for query: ${query.queryText.substring(0, 50)}...`);
+                
+                await db.createExecutionLog({
+                  sessionId,
+                  level: "warning",
+                  message: `API 呼叫失敗，重試中 (${attempt + 1}/${rateLimit.maxRetries})`,
+                  details: {
+                    queryId: query.queryId,
+                    queryText: query.queryText,
+                    engineName: engine.engineName,
+                    error: error instanceof Error ? error.message : String(error),
+                    retryDelay,
+                  },
+                });
+                
+                await delay(retryDelay);
+              } else {
+                throw lastError; // Max retries reached or non-retryable error
+              }
+            }
+          }
+          
+          if (!response) {
+            throw lastError || new Error('Failed to get response after retries');
+          }
           
           // Detect hallucination
           let hallucinationAnalysis;
@@ -250,8 +312,8 @@ async function executeBatchTestsInternal(params: BatchTestParams): Promise<void>
             message: `✓ 完成：${query.queryText.substring(0, 50)}...`,
           });
           
-          // Add delay to avoid rate limiting
-          await delay(1000);
+          // Add delay based on provider rate limits
+          await delay(rateLimit.delayMs);
           
         } catch (error) {
           failedTests++;

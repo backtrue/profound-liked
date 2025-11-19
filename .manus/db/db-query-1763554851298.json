@@ -1,0 +1,170 @@
+{
+  "query": "SELECT * FROM executionLogs WHERE sessionId IN (SELECT id FROM analysisSessions ORDER BY id DESC LIMIT 1) ORDER BY id DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2iyb7T7XBaHHgi3.0b5e78d12b02 --database Wn5966Umo3E3MfrFwb4EY7 --execute SELECT * FROM executionLogs WHERE sessionId IN (SELECT id FROM analysisSessions ORDER BY id DESC LIMIT 1) ORDER BY id DESC LIMIT 20;",
+  "rows": [
+    {
+      "id": "30163",
+      "sessionId": "60001",
+      "level": "info",
+      "message": "批次測試完成：成功 0 筆，失敗 160 筆",
+      "details": "{\"failedTests\": 160, \"successfulTests\": 0, \"totalTests\": 160}",
+      "createdAt": "2025-11-19 12:08:19"
+    },
+    {
+      "id": "30162",
+      "sessionId": "60001",
+      "level": "error",
+      "message": "查詢失敗：堅果塔做法很難嗎？有沒有新手零失敗食譜或半成品可以買...",
+      "details": "{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n    \\\"error\\\": {\\n        \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n        \\\"type\\\": \\\"invalid_request_error\\\",\\n        \\\"param\\\": null,\\n        \\\"code\\\": \\\"invalid_api_key\\\"\\n    }\\n}\\n\", \"queryId\": 40, \"queryText\": \"堅果塔做法很難嗎？有沒有新手零失敗食譜或半成品可以買\"}",
+      "createdAt": "2025-11-19 12:08:18"
+    },
+    {
+      "id": "30161",
+      "sessionId": "60001",
+      "level": "error",
+      "message": "查詢失敗：堅果塔宅配推薦哪家？運費怎麼算最便宜...",
+      "details": "{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"code\\\": \\\"invalid_api_key\\\",\\n    \\\"param\\\": null\\n  }\\n}\", \"queryId\": 39, \"queryText\": \"堅果塔宅配推薦哪家？運費怎麼算最便宜\"}",
+      "createdAt": "2025-11-19 12:08:18"
+    },
+    {
+      "id": "30160",
+      "sessionId": "60001",
+      "level": "error",
+      "message": "查詢失敗：堅果塔送禮會很low嗎？包裝好看的推薦...",
+      "details": "{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n    \\\"error\\\": {\\n        \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n        \\\"type\\\": \\\"invalid_request_error\\\",\\n        \\\"param\\\": null,\\n        \\\"code\\\": \\\"invalid_api_key\\\"\\n    }\\n}\\n\", \"queryId\": 38, \"queryText\": \"堅果塔送禮會很low嗎？包裝好看的推薦\"}",
+      "createdAt": "2025-11-19 12:08:17"
+    },
+    {
+      "id": "30159",
+      "sessionId": "60001",
+      "level": "error",
+      "message": "查詢失敗：除了星巴克，還有哪些平價堅果塔可以當下午茶？...",
+      "details": "{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"code\\\": \\\"invalid_api_key\\\",\\n    \\\"param\\\": null\\n  }\\n}\", \"queryId\": 37, \"queryText\": \"除了星巴克，還有哪些平價堅果塔可以當下午茶？\"}",
+      "createdAt": "2025-11-19 12:08:16"
+    },
+    {
+      "id": "30158",
+      "sessionId": "60001",
+      "level": "error",
+      "message": "查詢失敗：堅果塔保存期限多久？怎麼冰比較不會變軟...",
+      "details": "{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n    \\\"error\\\": {\\n        \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n        \\\"type\\\": \\\"invalid_request_error\\\",\\n        \\\"param\\\": null,\\n        \\\"code\\\": \\\"invalid_api_key\\\"\\n    }\\n}\\n\", \"queryId\": 36, \"queryText\": \"堅果塔保存期限多久？怎麼冰比較不會變軟\"}",
+      "createdAt": "2025-11-19 12:08:16"
+    },
+    {
+      "id": "30157",
+      "sessionId": "60001",
+      "level": "error",
+      "message": "查詢失敗：堅果塔熱量高嗎？有沒有低糖或健康的選擇...",
+      "details": "{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"code\\\": \\\"invalid_api_key\\\",\\n    \\\"param\\\": null\\n  }\\n}\", \"queryId\": 35, \"queryText\": \"堅果塔熱量高嗎？有沒有低糖或健康的選擇\"}",
+      "createdAt": "2025-11-19 12:08:15"
+    },
+    {
+      "id": "30156",
+      "sessionId": "60001",
+      "level": "error",
+      "message": "查詢失敗：超商堅果塔 vs 專門店 差異在哪？值得買嗎...",
+      "details": "{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n    \\\"error\\\": {\\n        \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n        \\\"type\\\": \\\"invalid_request_error\\\",\\n        \\\"param\\\": null,\\n        \\\"code\\\": \\\"invalid_api_key\\\"\\n    }\\n}\\n\", \"queryId\": 34, \"queryText\": \"超商堅果塔 vs 專門店 差異在哪？值得買嗎\"}",
+      "createdAt": "2025-11-19 12:08:15"
+    },
+    {
+      "id": "30155",
+      "sessionId": "60001",
+      "level": "error",
+      "message": "查詢失敗：堅果塔團購划算嗎？有沒有踩雷心得分享...",
+      "details": "{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"code\\\": \\\"invalid_api_key\\\",\\n    \\\"param\\\": null\\n  }\\n}\", \"queryId\": 33, \"queryText\": \"堅果塔團購划算嗎？有沒有踩雷心得分享\"}",
+      "createdAt": "2025-11-19 12:08:14"
+    },
+    {
+      "id": "30154",
+      "sessionId": "60001",
+      "level": "error",
+      "message": "查詢失敗：台北哪家堅果塔好吃又不貴？大學生荷包友善款...",
+      "details": "{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n    \\\"error\\\": {\\n        \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n        \\\"type\\\": \\\"invalid_request_error\\\",\\n        \\\"param\\\": null,\\n        \\\"code\\\": \\\"invalid_api_key\\\"\\n    }\\n}\\n\", \"queryId\": 32, \"queryText\": \"台北哪家堅果塔好吃又不貴？大學生荷包友善款\"}",
+      "createdAt": "2025-11-19 12:08:13"
+    },
+    {
+      "id": "30153",
+      "sessionId": "60001",
+      "level": "error",
+      "message": "查詢失敗：堅果塔 CP 值最高 推薦 PTT Dcard...",
+      "details": "{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n    \\\"error\\\": {\\n        \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n        \\\"type\\\": \\\"invalid_request_error\\\",\\n        \\\"param\\\": null,\\n        \\\"code\\\": \\\"invalid_api_key\\\"\\n    }\\n}\\n\", \"queryId\": 31, \"queryText\": \"堅果塔 CP 值最高 推薦 PTT Dcard\"}",
+      "createdAt": "2025-11-19 12:08:13"
+    },
+    {
+      "id": "30152",
+      "sessionId": "60001",
+      "level": "error",
+      "message": "查詢失敗：堅果塔 評測...",
+      "details": "{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n    \\\"error\\\": {\\n        \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n        \\\"type\\\": \\\"invalid_request_error\\\",\\n        \\\"param\\\": null,\\n        \\\"code\\\": \\\"invalid_api_key\\\"\\n    }\\n}\\n\", \"queryId\": 30, \"queryText\": \"堅果塔 評測\"}",
+      "createdAt": "2025-11-19 12:08:12"
+    },
+    {
+      "id": "30151",
+      "sessionId": "60001",
+      "level": "error",
+      "message": "查詢失敗：堅果塔 好用嗎...",
+      "details": "{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n    \\\"error\\\": {\\n        \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n        \\\"type\\\": \\\"invalid_request_error\\\",\\n        \\\"param\\\": null,\\n        \\\"code\\\": \\\"invalid_api_key\\\"\\n    }\\n}\\n\", \"queryId\": 29, \"queryText\": \"堅果塔 好用嗎\"}",
+      "createdAt": "2025-11-19 12:08:12"
+    },
+    {
+      "id": "30150",
+      "sessionId": "60001",
+      "level": "error",
+      "message": "查詢失敗：堅果塔 使用心得...",
+      "details": "{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n    \\\"error\\\": {\\n        \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n        \\\"type\\\": \\\"invalid_request_error\\\",\\n        \\\"param\\\": null,\\n        \\\"code\\\": \\\"invalid_api_key\\\"\\n    }\\n}\\n\", \"queryId\": 28, \"queryText\": \"堅果塔 使用心得\"}",
+      "createdAt": "2025-11-19 12:08:11"
+    },
+    {
+      "id": "30149",
+      "sessionId": "60001",
+      "level": "error",
+      "message": "查詢失敗：堅果塔 價格比較...",
+      "details": "{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"code\\\": \\\"invalid_api_key\\\",\\n    \\\"param\\\": null\\n  }\\n}\", \"queryId\": 27, \"queryText\": \"堅果塔 價格比較\"}",
+      "createdAt": "2025-11-19 12:08:11"
+    },
+    {
+      "id": "30148",
+      "sessionId": "60001",
+      "level": "error",
+      "message": "查詢失敗：堅果塔 優缺點...",
+      "details": "{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"code\\\": \\\"invalid_api_key\\\",\\n    \\\"param\\\": null\\n  }\\n}\", \"queryId\": 26, \"queryText\": \"堅果塔 優缺點\"}",
+      "createdAt": "2025-11-19 12:08:10"
+    },
+    {
+      "id": "30147",
+      "sessionId": "60001",
+      "level": "error",
+      "message": "查詢失敗：堅果塔 哪裡買...",
+      "details": "{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"code\\\": \\\"invalid_api_key\\\",\\n    \\\"param\\\": null\\n  }\\n}\", \"queryId\": 25, \"queryText\": \"堅果塔 哪裡買\"}",
+      "createdAt": "2025-11-19 12:08:09"
+    },
+    {
+      "id": "30146",
+      "sessionId": "60001",
+      "level": "error",
+      "message": "查詢失敗：堅果塔 2025 推薦...",
+      "details": "{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"code\\\": \\\"invalid_api_key\\\",\\n    \\\"param\\\": null\\n  }\\n}\", \"queryId\": 24, \"queryText\": \"堅果塔 2025 推薦\"}",
+      "createdAt": "2025-11-19 12:08:09"
+    },
+    {
+      "id": "30145",
+      "sessionId": "60001",
+      "level": "error",
+      "message": "查詢失敗：堅果塔 Mobile01 心得...",
+      "details": "{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n    \\\"error\\\": {\\n        \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n        \\\"type\\\": \\\"invalid_request_error\\\",\\n        \\\"param\\\": null,\\n        \\\"code\\\": \\\"invalid_api_key\\\"\\n    }\\n}\\n\", \"queryId\": 23, \"queryText\": \"堅果塔 Mobile01 心得\"}",
+      "createdAt": "2025-11-19 12:08:08"
+    },
+    {
+      "id": "30144",
+      "sessionId": "60001",
+      "level": "error",
+      "message": "查詢失敗：堅果塔 Dcard 評價...",
+      "details": "{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"code\\\": \\\"invalid_api_key\\\",\\n    \\\"param\\\": null\\n  }\\n}\", \"queryId\": 22, \"queryText\": \"堅果塔 Dcard 評價\"}",
+      "createdAt": "2025-11-19 12:08:08"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsessionId\tlevel\tmessage\tdetails\tcreatedAt\n30163\t60001\tinfo\t批次測試完成：成功 0 筆，失敗 160 筆\t{\"failedTests\": 160, \"successfulTests\": 0, \"totalTests\": 160}\t2025-11-19 12:08:19\n30162\t60001\terror\t查詢失敗：堅果塔做法很難嗎？有沒有新手零失敗食譜或半成品可以買...\t{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n    \\\"error\\\": {\\n        \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n        \\\"type\\\": \\\"invalid_request_error\\\",\\n        \\\"param\\\": null,\\n        \\\"code\\\": \\\"invalid_api_key\\\"\\n    }\\n}\\n\", \"queryId\": 40, \"queryText\": \"堅果塔做法很難嗎？有沒有新手零失敗食譜或半成品可以買\"}\t2025-11-19 12:08:18\n30161\t60001\terror\t查詢失敗：堅果塔宅配推薦哪家？運費怎麼算最便宜...\t{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"code\\\": \\\"invalid_api_key\\\",\\n    \\\"param\\\": null\\n  }\\n}\", \"queryId\": 39, \"queryText\": \"堅果塔宅配推薦哪家？運費怎麼算最便宜\"}\t2025-11-19 12:08:18\n30160\t60001\terror\t查詢失敗：堅果塔送禮會很low嗎？包裝好看的推薦...\t{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n    \\\"error\\\": {\\n        \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n        \\\"type\\\": \\\"invalid_request_error\\\",\\n        \\\"param\\\": null,\\n        \\\"code\\\": \\\"invalid_api_key\\\"\\n    }\\n}\\n\", \"queryId\": 38, \"queryText\": \"堅果塔送禮會很low嗎？包裝好看的推薦\"}\t2025-11-19 12:08:17\n30159\t60001\terror\t查詢失敗：除了星巴克，還有哪些平價堅果塔可以當下午茶？...\t{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"code\\\": \\\"invalid_api_key\\\",\\n    \\\"param\\\": null\\n  }\\n}\", \"queryId\": 37, \"queryText\": \"除了星巴克，還有哪些平價堅果塔可以當下午茶？\"}\t2025-11-19 12:08:16\n30158\t60001\terror\t查詢失敗：堅果塔保存期限多久？怎麼冰比較不會變軟...\t{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n    \\\"error\\\": {\\n        \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n        \\\"type\\\": \\\"invalid_request_error\\\",\\n        \\\"param\\\": null,\\n        \\\"code\\\": \\\"invalid_api_key\\\"\\n    }\\n}\\n\", \"queryId\": 36, \"queryText\": \"堅果塔保存期限多久？怎麼冰比較不會變軟\"}\t2025-11-19 12:08:16\n30157\t60001\terror\t查詢失敗：堅果塔熱量高嗎？有沒有低糖或健康的選擇...\t{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"code\\\": \\\"invalid_api_key\\\",\\n    \\\"param\\\": null\\n  }\\n}\", \"queryId\": 35, \"queryText\": \"堅果塔熱量高嗎？有沒有低糖或健康的選擇\"}\t2025-11-19 12:08:15\n30156\t60001\terror\t查詢失敗：超商堅果塔 vs 專門店 差異在哪？值得買嗎...\t{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n    \\\"error\\\": {\\n        \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n        \\\"type\\\": \\\"invalid_request_error\\\",\\n        \\\"param\\\": null,\\n        \\\"code\\\": \\\"invalid_api_key\\\"\\n    }\\n}\\n\", \"queryId\": 34, \"queryText\": \"超商堅果塔 vs 專門店 差異在哪？值得買嗎\"}\t2025-11-19 12:08:15\n30155\t60001\terror\t查詢失敗：堅果塔團購划算嗎？有沒有踩雷心得分享...\t{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"code\\\": \\\"invalid_api_key\\\",\\n    \\\"param\\\": null\\n  }\\n}\", \"queryId\": 33, \"queryText\": \"堅果塔團購划算嗎？有沒有踩雷心得分享\"}\t2025-11-19 12:08:14\n30154\t60001\terror\t查詢失敗：台北哪家堅果塔好吃又不貴？大學生荷包友善款...\t{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n    \\\"error\\\": {\\n        \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n        \\\"type\\\": \\\"invalid_request_error\\\",\\n        \\\"param\\\": null,\\n        \\\"code\\\": \\\"invalid_api_key\\\"\\n    }\\n}\\n\", \"queryId\": 32, \"queryText\": \"台北哪家堅果塔好吃又不貴？大學生荷包友善款\"}\t2025-11-19 12:08:13\n30153\t60001\terror\t查詢失敗：堅果塔 CP 值最高 推薦 PTT Dcard...\t{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n    \\\"error\\\": {\\n        \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n        \\\"type\\\": \\\"invalid_request_error\\\",\\n        \\\"param\\\": null,\\n        \\\"code\\\": \\\"invalid_api_key\\\"\\n    }\\n}\\n\", \"queryId\": 31, \"queryText\": \"堅果塔 CP 值最高 推薦 PTT Dcard\"}\t2025-11-19 12:08:13\n30152\t60001\terror\t查詢失敗：堅果塔 評測...\t{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n    \\\"error\\\": {\\n        \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n        \\\"type\\\": \\\"invalid_request_error\\\",\\n        \\\"param\\\": null,\\n        \\\"code\\\": \\\"invalid_api_key\\\"\\n    }\\n}\\n\", \"queryId\": 30, \"queryText\": \"堅果塔 評測\"}\t2025-11-19 12:08:12\n30151\t60001\terror\t查詢失敗：堅果塔 好用嗎...\t{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n    \\\"error\\\": {\\n        \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n        \\\"type\\\": \\\"invalid_request_error\\\",\\n        \\\"param\\\": null,\\n        \\\"code\\\": \\\"invalid_api_key\\\"\\n    }\\n}\\n\", \"queryId\": 29, \"queryText\": \"堅果塔 好用嗎\"}\t2025-11-19 12:08:12\n30150\t60001\terror\t查詢失敗：堅果塔 使用心得...\t{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n    \\\"error\\\": {\\n        \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n        \\\"type\\\": \\\"invalid_request_error\\\",\\n        \\\"param\\\": null,\\n        \\\"code\\\": \\\"invalid_api_key\\\"\\n    }\\n}\\n\", \"queryId\": 28, \"queryText\": \"堅果塔 使用心得\"}\t2025-11-19 12:08:11\n30149\t60001\terror\t查詢失敗：堅果塔 價格比較...\t{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"code\\\": \\\"invalid_api_key\\\",\\n    \\\"param\\\": null\\n  }\\n}\", \"queryId\": 27, \"queryText\": \"堅果塔 價格比較\"}\t2025-11-19 12:08:11\n30148\t60001\terror\t查詢失敗：堅果塔 優缺點...\t{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"code\\\": \\\"invalid_api_key\\\",\\n    \\\"param\\\": null\\n  }\\n}\", \"queryId\": 26, \"queryText\": \"堅果塔 優缺點\"}\t2025-11-19 12:08:10\n30147\t60001\terror\t查詢失敗：堅果塔 哪裡買...\t{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"code\\\": \\\"invalid_api_key\\\",\\n    \\\"param\\\": null\\n  }\\n}\", \"queryId\": 25, \"queryText\": \"堅果塔 哪裡買\"}\t2025-11-19 12:08:09\n30146\t60001\terror\t查詢失敗：堅果塔 2025 推薦...\t{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"code\\\": \\\"invalid_api_key\\\",\\n    \\\"param\\\": null\\n  }\\n}\", \"queryId\": 24, \"queryText\": \"堅果塔 2025 推薦\"}\t2025-11-19 12:08:09\n30145\t60001\terror\t查詢失敗：堅果塔 Mobile01 心得...\t{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n    \\\"error\\\": {\\n        \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n        \\\"type\\\": \\\"invalid_request_error\\\",\\n        \\\"param\\\": null,\\n        \\\"code\\\": \\\"invalid_api_key\\\"\\n    }\\n}\\n\", \"queryId\": 23, \"queryText\": \"堅果塔 Mobile01 心得\"}\t2025-11-19 12:08:08\n30144\t60001\terror\t查詢失敗：堅果塔 Dcard 評價...\t{\"engineName\": \"ChatGPT\", \"error\": \"OpenAI API error: 401 - {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Incorrect API key provided: sk-test-******-key. You can find your API key at https://platform.openai.com/account/api-keys.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"code\\\": \\\"invalid_api_key\\\",\\n    \\\"param\\\": null\\n  }\\n}\", \"queryId\": 22, \"queryText\": \"堅果塔 Dcard 評價\"}\t2025-11-19 12:08:08\n",
+  "stderr": "",
+  "execution_time_ms": 1541
+}

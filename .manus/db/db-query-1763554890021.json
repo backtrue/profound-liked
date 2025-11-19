@@ -1,0 +1,30 @@
+{
+  "query": "SELECT id, projectId, status FROM analysisSessions WHERE projectId = 1 ORDER BY id DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2iyb7T7XBaHHgi3.0b5e78d12b02 --database Wn5966Umo3E3MfrFwb4EY7 --execute SELECT id, projectId, status FROM analysisSessions WHERE projectId = 1 ORDER BY id DESC;",
+  "rows": [
+    {
+      "id": "60001",
+      "projectId": "1",
+      "status": "completed"
+    },
+    {
+      "id": "3",
+      "projectId": "1",
+      "status": "failed"
+    },
+    {
+      "id": "2",
+      "projectId": "1",
+      "status": "completed"
+    },
+    {
+      "id": "1",
+      "projectId": "1",
+      "status": "completed"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tprojectId\tstatus\n60001\t1\tcompleted\n3\t1\tfailed\n2\t1\tcompleted\n1\t1\tcompleted\n",
+  "stderr": "",
+  "execution_time_ms": 1597
+}

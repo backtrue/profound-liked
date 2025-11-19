@@ -283,8 +283,18 @@ export const appRouter = router({
           throw new Error("No API keys configured. Please add at least one API key in settings.");
         }
 
-        // Get active target engines
-        const targetEngines = await db.getActiveTargetEngines();
+        // Create virtual target engines from user's API keys
+        const targetEngines = userApiKeys.map((key, index) => ({
+          id: index + 1, // Virtual ID
+          engineName: key.provider === 'openai' ? 'ChatGPT' : 
+                      key.provider === 'perplexity' ? 'Perplexity' : 
+                      key.provider === 'google' ? 'Gemini' : key.provider,
+          provider: key.provider,
+          modelVersion: null,
+          isActive: key.isActive,
+          createdAt: key.createdAt,
+          updatedAt: key.updatedAt,
+        }));
 
         // Execute tests in background (don't await)
         executeBatchTests({

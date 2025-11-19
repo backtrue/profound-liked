@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, userId, provider, isActive, createdAt FROM apiKeys WHERE userId = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2iyb7T7XBaHHgi3.0b5e78d12b02 --database Wn5966Umo3E3MfrFwb4EY7 --execute SELECT id, userId, provider, isActive, createdAt FROM apiKeys WHERE userId = 1;",
+  "rows": [
+    {
+      "id": "1",
+      "userId": "1",
+      "provider": "google",
+      "isActive": "1",
+      "createdAt": "2025-11-19 08:30:05"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tprovider\tisActive\tcreatedAt\n1\t1\tgoogle\t1\t2025-11-19 08:30:05\n",
+  "stderr": "",
+  "execution_time_ms": 1593
+}

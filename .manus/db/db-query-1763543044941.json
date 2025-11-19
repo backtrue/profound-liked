@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) as count FROM engineResponses WHERE sessionId = 2;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2iyb7T7XBaHHgi3.0b5e78d12b02 --database Wn5966Umo3E3MfrFwb4EY7 --execute SELECT COUNT(*) as count FROM engineResponses WHERE sessionId = 2;",
+  "rows": [
+    {
+      "count": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "count\n0\n",
+  "stderr": "",
+  "execution_time_ms": 1622
+}

@@ -391,6 +391,7 @@ export async function getDecryptedApiKey(userId: number, provider: "openai" | "p
       eq(apiKeys.provider, provider),
       eq(apiKeys.isActive, true)
     ))
+    .orderBy(desc(apiKeys.createdAt))  // Select the most recent API key
     .limit(1);
 
   if (result.length === 0) return null;

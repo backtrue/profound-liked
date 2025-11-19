@@ -3,6 +3,19 @@ import { Server as SocketIOServer } from "socket.io";
 
 let io: SocketIOServer | null = null;
 
+// Store current progress for each session
+const sessionProgress = new Map<number, {
+  status: "running" | "completed" | "failed";
+  currentQuery: number;
+  totalQueries: number;
+  currentEngine: string;
+  successCount: number;
+  failedCount: number;
+  estimatedTimeRemaining?: number;
+  message?: string;
+  rateLimit?: string;
+}>();
+
 export function initializeSocketIO(httpServer: HttpServer): SocketIOServer {
   io = new SocketIOServer(httpServer, {
     cors: {
@@ -24,6 +37,13 @@ export function initializeSocketIO(httpServer: HttpServer): SocketIOServer {
       const roomName = `session-${sessionId}`;
       socket.join(roomName);
       console.log(`[Socket.IO] Client ${socket.id} joined room: ${roomName}`);
+      
+      // Send current progress if available
+      const currentProgress = sessionProgress.get(sessionId);
+      if (currentProgress) {
+        socket.emit("progress", currentProgress);
+        console.log(`[Socket.IO] Sent current progress to ${socket.id}:`, currentProgress);
+      }
     });
 
     // Leave a session room
@@ -61,8 +81,21 @@ export function emitProgress(sessionId: number, progress: {
   }
 
   const roomName = `session-${sessionId}`;
+  
+  // Store current progress
+  sessionProgress.set(sessionId, progress);
+  
+  // Emit to all clients in the room
   io.to(roomName).emit("progress", progress);
   console.log(`[Socket.IO] Progress emitted to ${roomName}:`, progress);
+  
+  // Clean up progress when completed or failed
+  if (progress.status === "completed" || progress.status === "failed") {
+    setTimeout(() => {
+      sessionProgress.delete(sessionId);
+      console.log(`[Socket.IO] Cleaned up progress for session ${sessionId}`);
+    }, 60000); // Keep for 1 minute after completion
+  }
 }
 
 /**

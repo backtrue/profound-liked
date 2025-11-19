@@ -53,6 +53,7 @@ export function emitProgress(sessionId: number, progress: {
   failedCount: number;
   estimatedTimeRemaining?: number;
   message?: string;
+  rateLimit?: string;
 }) {
   if (!io) {
     console.warn("[Socket.IO] Socket.IO not initialized");

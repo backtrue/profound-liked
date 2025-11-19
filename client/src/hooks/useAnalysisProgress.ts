@@ -10,6 +10,7 @@ interface ProgressData {
   failedCount: number;
   estimatedTimeRemaining?: number;
   message?: string;
+  rateLimit?: string;
 }
 
 interface ErrorData {

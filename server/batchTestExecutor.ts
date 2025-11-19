@@ -149,15 +149,36 @@ async function executeBatchTestsInternal(params: BatchTestParams): Promise<void>
       }
 
       console.log(`[BatchTest] Testing with ${engine.engineName} (${allQueries.length} queries)`);
+      
+      // Get rate limit for current provider
+      const currentRateLimit = RATE_LIMITS[provider] || { delayMs: 1000, maxRetries: 3 };
 
       for (const query of allQueries) {
         totalTests++;
         
-        // Calculate estimated time remaining
+        // Calculate estimated time remaining with rate limit consideration
         const elapsedTime = Date.now() - startTime;
         const avgTimePerQuery = totalTests > 1 ? elapsedTime / (totalTests - 1) : 0;
-        const remainingQueries = (allQueries.length * targetEngines.length) - totalTests;
-        const estimatedTimeRemaining = Math.round(avgTimePerQuery * remainingQueries / 1000); // in seconds
+        
+        // Calculate remaining queries for each engine
+        const currentEngineIndex = targetEngines.findIndex(e => e.id === engine.id);
+        const remainingEngines = targetEngines.length - currentEngineIndex;
+        const currentQueryIndex = allQueries.findIndex(q => q.queryId === query.queryId);
+        const remainingQueriesThisEngine = allQueries.length - currentQueryIndex;
+        const remainingQueriesOtherEngines = (remainingEngines - 1) * allQueries.length;
+        const totalRemainingQueries = remainingQueriesThisEngine + remainingQueriesOtherEngines;
+        
+        // Use actual average if we have enough data, otherwise use theoretical estimate
+        let estimatedTimeRemaining;
+        if (totalTests > 5 && avgTimePerQuery > 0) {
+          // Use actual average time (more accurate after initial queries)
+          estimatedTimeRemaining = Math.round(avgTimePerQuery * totalRemainingQueries / 1000);
+        } else {
+          // Use theoretical estimate based on rate limits (more accurate initially)
+          const avgApiCallTime = 3000; // Assume 3 seconds for API call + processing
+          const theoreticalTimePerQuery = avgApiCallTime + currentRateLimit.delayMs;
+          estimatedTimeRemaining = Math.round(theoreticalTimePerQuery * totalRemainingQueries / 1000);
+        }
         
         // Emit progress update before processing
         emitProgress(sessionId, {
@@ -168,7 +189,8 @@ async function executeBatchTestsInternal(params: BatchTestParams): Promise<void>
           successCount: successfulTests,
           failedCount: failedTests,
           estimatedTimeRemaining,
-          message: `正在測試：${query.queryText.substring(0, 50)}...`,
+          message: `[${engine.engineName}] 正在測試 (${currentQueryIndex + 1}/${allQueries.length})：${query.queryText.substring(0, 40)}...`,
+          rateLimit: `${provider} 速率限制：每個問句約 ${Math.round(currentRateLimit.delayMs / 1000)} 秒`,
         });
         
         try {

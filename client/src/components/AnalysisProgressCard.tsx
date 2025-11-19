@@ -95,21 +95,35 @@ export function AnalysisProgressCard({ sessionId }: AnalysisProgressCardProps) {
         </div>
 
         {progress.status === "running" && (
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="space-y-1">
-              <div className="text-muted-foreground">當前引擎</div>
-              <div className="font-medium">{progress.currentEngine}</div>
-            </div>
-            {progress.estimatedTimeRemaining !== undefined && (
+          <>
+            <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="space-y-1">
-                <div className="text-muted-foreground flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  預估剩餘時間
+                <div className="text-muted-foreground">當前引擎</div>
+                <div className="font-medium">{progress.currentEngine}</div>
+              </div>
+              {progress.estimatedTimeRemaining !== undefined && (
+                <div className="space-y-1">
+                  <div className="text-muted-foreground flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    預估剩餘時間
+                  </div>
+                  <div className="font-medium">{formatTime(progress.estimatedTimeRemaining)}</div>
                 </div>
-                <div className="font-medium">{formatTime(progress.estimatedTimeRemaining)}</div>
+              )}
+            </div>
+            
+            {progress.rateLimit && (
+              <div className="rounded-lg bg-muted/50 p-3 text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  <span>{progress.rateLimit}</span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  為了遵守 API 配額限制，每個問句之間會有延遲。請耐心等候，系統正在穩定執行中...
+                </p>
               </div>
             )}
-          </div>
+          </>
         )}
 
         <div className="grid grid-cols-2 gap-4 pt-2 border-t">

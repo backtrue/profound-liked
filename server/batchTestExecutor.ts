@@ -2,6 +2,7 @@ import * as db from "./db";
 import { queryEngine } from "./aiEngines";
 import type { SeedKeyword, TargetEngine, ApiKey } from "../drizzle/schema";
 import { emitProgress, emitError } from "./_core/socket";
+import { analyzeBrandMentions } from "./llmBrandAnalysis";
 
 interface BatchTestParams {
   sessionId: number;
@@ -121,18 +122,49 @@ export async function executeBatchTests(params: BatchTestParams): Promise<void> 
             await db.createCitationSources(citationData);
           }
 
-          // Analyze for brand mentions (simple keyword matching for now)
-          const mentions = detectBrandMentions(response.content, brandName, competitors);
-          if (mentions.length > 0) {
-            const mentionData = mentions.map(mention => ({
-              responseId: engineResponse.id,
-              brandName: mention.brandName,
-              context: mention.context,
-              rankPosition: mention.rankPosition,
-              sentimentScore: mention.sentimentScore,
-              isSarcastic: mention.isSarcastic,
-            }));
-            await db.createBrandMentions(mentionData);
+          // Use LLM to analyze brand mentions
+          try {
+            const llmAnalysis = await analyzeBrandMentions(
+              query.queryText,
+              response.content,
+              brandName,
+              competitors
+            );
+
+            // Save brand mentions with LLM analysis
+            const mentionedBrands = llmAnalysis.brands.filter((b: any) => b.mentioned);
+            if (mentionedBrands.length > 0) {
+              const mentionData = mentionedBrands.map((brand: any) => ({
+                responseId: engineResponse.id,
+                brandName: brand.brandName,
+                sentimentScore: brand.sentimentScore,
+                rankPosition: brand.rankPosition,
+                isSarcastic: brand.isSarcastic,
+                context: brand.context,
+                recommendationStrength: brand.recommendationStrength,
+                mentionContext: brand.mentionContext,
+                llmAnalysis: brand.llmAnalysis,
+              }));
+              await db.createBrandMentions(mentionData);
+            }
+          } catch (llmError) {
+            console.error(`[BatchTest] LLM analysis failed for query ${query.queryId}:`, llmError);
+            // Fallback to simple keyword matching
+            const mentions = detectBrandMentions(response.content, brandName, competitors);
+            if (mentions.length > 0) {
+              const mentionData = mentions.map(mention => ({
+                responseId: engineResponse.id,
+                brandName: mention.brandName,
+                context: mention.context,
+                rankPosition: mention.rankPosition,
+                sentimentScore: mention.sentimentScore,
+                isSarcastic: mention.isSarcastic,
+                recommendationStrength: null,
+                mentionContext: null,
+                llmAnalysis: "LLM 分析失敗，使用關鍵字匹配",
+              }));
+              await db.createBrandMentions(mentionData);
+            }
           }
 
           successfulTests++;

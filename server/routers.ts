@@ -2,7 +2,8 @@ import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
+import { generateAnalysisReport } from "./llmBrandAnalysis";
 import * as db from "./db";
 import { queryEngine } from "./aiEngines";
 import { invokeLLM } from "./_core/llm";
@@ -152,10 +153,61 @@ export const appRouter = router({
         });
       }),
 
+    generateReport: protectedProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const session = await db.getAnalysisSessionById(input.sessionId);
+        if (!session) {
+          throw new Error("分析 Session 不存在");
+        }
+
+        const project = await db.getProjectById(session.projectId);
+        if (!project) {
+          throw new Error("專案不存在");
+        }
+
+        // Get all responses and brand mentions for this session
+        const responses = await db.getEngineResponsesBySessionId(input.sessionId);
+        
+        // Get all brand mentions for all responses
+        const allBrandMentions: any[] = [];
+        for (const response of responses) {
+          const mentions = await db.getBrandMentionsByResponseId(response.id);
+          allBrandMentions.push(...mentions);
+        }
+
+        // Group by response to reconstruct analysis results
+        const analysisResults = responses.map((response: any) => {
+          const mentions = allBrandMentions.filter((m: any) => m.responseId === response.id);
+          return {
+            brands: mentions.map((m: any) => ({
+              brandName: m.brandName,
+              mentioned: true,
+              rankPosition: m.rankPosition,
+              sentimentScore: m.sentimentScore,
+              isSarcastic: m.isSarcastic,
+              recommendationStrength: m.recommendationStrength,
+              mentionContext: m.mentionContext,
+              context: m.context || "",
+              llmAnalysis: m.llmAnalysis || "",
+            })),
+            summary: "",
+            recommendations: [],
+          };
+        });
+
+        const report = await generateAnalysisReport(
+          input.sessionId,
+          project.brandName,
+          project.competitors || [],
+          analysisResults
+        );
+
+        return { report };
+      }),
+
     runBatchTest: protectedProcedure
-      .input(z.object({
-        sessionId: z.number(),
-      }))
+      .input(z.object({ sessionId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         const session = await db.getAnalysisSessionById(input.sessionId);
         if (!session) {

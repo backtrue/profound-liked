@@ -114,11 +114,15 @@ export type InsertEngineResponse = typeof engineResponses.$inferInsert;
 export const brandMentions = mysqlTable("brandMentions", {
   id: int("id").autoincrement().primaryKey(),
   responseId: int("responseId").notNull(),
-  brandName: varchar("brandName", { length: 255 }).notNull(),
+  brandName: varchar("brandName", { length: 200 }).notNull(),
+  sentimentScore: int("sentimentScore").notNull(), // -100 to 100
   rankPosition: int("rankPosition"),
-  sentimentScore: int("sentimentScore").notNull(), // -1: negative, 0: neutral, 1: positive
-  isSarcastic: boolean("isSarcastic").default(false).notNull(),
+  isSarcastic: boolean("isSarcastic").default(false),
   context: text("context"),
+  // LLM enhanced fields
+  recommendationStrength: mysqlEnum("recommendationStrength", ["strong_positive", "positive", "neutral", "negative", "strong_negative"]),
+  mentionContext: mysqlEnum("mentionContext", ["comparison", "review", "qa", "purchase_advice", "tutorial", "other"]),
+  llmAnalysis: text("llmAnalysis"), // Detailed LLM analysis result
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

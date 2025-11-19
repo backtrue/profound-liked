@@ -29,6 +29,13 @@
       "when": 1763535071082,
       "tag": "0003_even_pestilence",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1763536832739,
+      "tag": "0004_absent_tarantula",
+      "breakpoints": true
     }
   ]
 }

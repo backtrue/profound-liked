@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, TrendingUp, MessageSquare, Link as LinkIcon, AlertTriangle, CheckCircle2, Clock, Loader2 } from "lucide-react";
+import { ArrowLeft, TrendingUp, MessageSquare, Link as LinkIcon, AlertTriangle, CheckCircle2, Clock, Loader2, FileText } from "lucide-react";
 import { AnalysisProgressCard } from "@/components/AnalysisProgressCard";
 
 export default function AnalysisResult() {
@@ -87,6 +87,29 @@ export default function AnalysisResult() {
         {/* Real-time progress for running sessions */}
         {(session.status === "running" || session.status === "pending") && (
           <AnalysisProgressCard sessionId={sessionId} />
+        )}
+
+        {/* Generate Report Button for completed sessions */}
+        {session.status === "completed" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                LLM 深度分析報告
+              </CardTitle>
+              <CardDescription>
+                使用 LLM 生成包含執行摘要、關鍵發現和戰略建議的完整分析報告
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href={`/analysis/${sessionId}/report`}>
+                <Button size="lg">
+                  <FileText className="mr-2 h-5 w-5" />
+                  查看/生成報告
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
         )}
 
         {/* Summary Metrics */}

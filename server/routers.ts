@@ -1,11 +1,14 @@
+import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import * as db from "./db";
+import { invokeLLM } from "./_core/llm";
 
 export const appRouter = router({
-    // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
+  
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
@@ -17,12 +20,289 @@ export const appRouter = router({
     }),
   }),
 
-  // TODO: add feature routers here, e.g.
-  // todo: router({
-  //   list: protectedProcedure.query(({ ctx }) =>
-  //     db.getUserTodos(ctx.user.id)
-  //   ),
-  // }),
+  // ============ Project Management ============
+  project: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return db.getProjectsByUserId(ctx.user.id);
+    }),
+
+    create: protectedProcedure
+      .input(z.object({
+        projectName: z.string().min(1),
+        targetMarket: z.enum(["TW", "JP"]),
+        brandName: z.string().min(1),
+        competitors: z.array(z.string()).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.createProject({
+          userId: ctx.user.id,
+          projectName: input.projectName,
+          targetMarket: input.targetMarket,
+          brandName: input.brandName,
+          competitors: input.competitors || [],
+        });
+      }),
+
+    getById: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getProjectById(input.projectId);
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        projectName: z.string().min(1).optional(),
+        brandName: z.string().min(1).optional(),
+        competitors: z.array(z.string()).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { projectId, ...updates } = input;
+        await db.updateProject(projectId, updates);
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteProject(input.projectId);
+        return { success: true };
+      }),
+  }),
+
+  // ============ Seed Keywords ============
+  seedKeyword: router({
+    create: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        keyword: z.string().min(1),
+        searchVolume: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return db.createSeedKeyword(input);
+      }),
+
+    listByProject: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getSeedKeywordsByProjectId(input.projectId);
+      }),
+  }),
+
+  // ============ Query Generation ============
+  queryGeneration: router({
+    generate: protectedProcedure
+      .input(z.object({
+        seedKeywordId: z.number(),
+        seedKeyword: z.string(),
+        targetMarket: z.enum(["TW", "JP"]),
+      }))
+      .mutation(async ({ input }) => {
+        const { seedKeywordId, seedKeyword, targetMarket } = input;
+        
+        // Template-based queries (50%)
+        const templateQueries = generateTemplateQueries(seedKeyword, targetMarket);
+        
+        // AI-Creative queries (50%)
+        const aiQueries = await generateAICreativeQueries(seedKeyword, targetMarket);
+        
+        // Combine and save to database
+        const allQueries = [
+          ...templateQueries.map(q => ({
+            seedKeywordId,
+            queryText: q,
+            generationType: "template" as const,
+          })),
+          ...aiQueries.map(q => ({
+            seedKeywordId,
+            queryText: q,
+            generationType: "ai_creative" as const,
+          })),
+        ];
+        
+        await db.createDerivativeQueries(allQueries);
+        
+        return {
+          total: allQueries.length,
+          template: templateQueries.length,
+          aiCreative: aiQueries.length,
+          queries: allQueries,
+        };
+      }),
+
+    listBySeedKeyword: protectedProcedure
+      .input(z.object({ seedKeywordId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getDerivativeQueriesBySeedKeywordId(input.seedKeywordId);
+      }),
+  }),
+
+  // ============ Analysis Sessions ============
+  analysis: router({
+    create: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        return db.createAnalysisSession({
+          projectId: input.projectId,
+          status: "pending",
+        });
+      }),
+
+    listByProject: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getAnalysisSessionsByProjectId(input.projectId);
+      }),
+
+    getById: protectedProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getAnalysisSessionById(input.sessionId);
+      }),
+
+    getMetrics: protectedProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .query(async ({ input }) => {
+        const responses = await db.getEngineResponsesBySessionId(input.sessionId);
+        const actionItems = await db.getActionItemsBySessionId(input.sessionId);
+        
+        // Calculate metrics from responses
+        let totalMentions = 0;
+        let weightedScore = 0;
+        const sentimentBreakdown = { positive: 0, neutral: 0, negative: 0, sarcastic: 0 };
+        const citationAnalysis: Record<string, number> = {};
+        
+        for (const response of responses) {
+          const mentions = await db.getBrandMentionsByResponseId(response.id);
+          const citations = await db.getCitationSourcesByResponseId(response.id);
+          
+          totalMentions += mentions.length;
+          
+          for (const mention of mentions) {
+            // Calculate weighted score based on rank
+            if (mention.rankPosition === 1) weightedScore += 10;
+            else if (mention.rankPosition && mention.rankPosition <= 3) weightedScore += 5;
+            else if (mention.rankPosition && mention.rankPosition <= 10) weightedScore += 3;
+            else weightedScore += 1;
+            
+            // Sentiment breakdown
+            if (mention.isSarcastic) {
+              sentimentBreakdown.sarcastic++;
+            } else if (mention.sentimentScore > 0) {
+              sentimentBreakdown.positive++;
+            } else if (mention.sentimentScore < 0) {
+              sentimentBreakdown.negative++;
+            } else {
+              sentimentBreakdown.neutral++;
+            }
+          }
+          
+          for (const citation of citations) {
+            citationAnalysis[citation.sourceType] = (citationAnalysis[citation.sourceType] || 0) + 1;
+          }
+        }
+        
+        return {
+          sessionId: input.sessionId,
+          summaryMetrics: {
+            shareOfVoiceFrequency: totalMentions,
+            shareOfVoiceWeighted: weightedScore,
+            sentimentBreakdown,
+          },
+          citationAnalysis,
+          actionPlan: actionItems,
+        };
+      }),
+  }),
+
+  // ============ Action Items ============
+  actionItem: router({
+    updateStatus: protectedProcedure
+      .input(z.object({
+        itemId: z.number(),
+        status: z.enum(["pending", "in_progress", "completed"]),
+      }))
+      .mutation(async ({ input }) => {
+        await db.updateActionItemStatus(input.itemId, input.status);
+        return { success: true };
+      }),
+  }),
+
+  // ============ Target Engines ============
+  targetEngine: router({
+    list: protectedProcedure.query(async () => {
+      return db.getActiveTargetEngines();
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
+
+// ============ Helper Functions ============
+
+function generateTemplateQueries(seedKeyword: string, market: "TW" | "JP"): string[] {
+  const templates = [
+    `${seedKeyword} PTT 推薦`,
+    `${seedKeyword} Dcard 評價`,
+    `${seedKeyword} Mobile01 心得`,
+    `${seedKeyword} 2025 推薦`,
+    `${seedKeyword} 哪裡買`,
+    `${seedKeyword} 優缺點`,
+    `${seedKeyword} 價格比較`,
+    `${seedKeyword} 使用心得`,
+    `${seedKeyword} 好用嗎`,
+    `${seedKeyword} 評測`,
+  ];
+  
+  if (market === "JP") {
+    templates.push(
+      `${seedKeyword} 口コミ`,
+      `${seedKeyword} レビュー`,
+      `${seedKeyword} おすすめ`,
+      `${seedKeyword} 比較`,
+      `${seedKeyword} 価格`
+    );
+  }
+  
+  return templates;
+}
+
+async function generateAICreativeQueries(seedKeyword: string, market: "TW" | "JP"): Promise<string[]> {
+  const marketContext = market === "TW" 
+    ? "你是一個 25 歲注重 CP 值的台灣大學生，經常在 PTT、Dcard 上尋找產品推薦。"
+    : "あなたは25歳の日本の大学生で、コストパフォーマンスを重視し、よく口コミサイトで製品レビューを探します。";
+  
+  const prompt = `${marketContext}
+請針對「${seedKeyword}」這個產品，提出 10 個你會在搜尋引擎或 AI 助手（如 ChatGPT）上詢問的問題。
+這些問題應該：
+1. 反映真實消費者的疑慮和需求
+2. 包含不同購買階段（認知、考慮、決策）
+3. 可能帶有口語化或網路用語
+
+請直接列出問題，每行一個問題，不需要編號。`;
+
+  try {
+    const response = await invokeLLM({
+      messages: [
+        { role: "system", content: "你是一個協助生成搜尋問句的助手。" },
+        { role: "user", content: prompt },
+      ],
+    });
+    
+    const content = response.choices[0]?.message?.content || "";
+    const contentStr = typeof content === 'string' ? content : '';
+    const queries = contentStr
+      .split("\n")
+      .map((line: string) => line.trim())
+      .filter((line: string) => line.length > 0 && !line.match(/^\d+[\.\)]/)) // Remove numbered lines
+      .slice(0, 10);
+    
+    return queries;
+  } catch (error) {
+    console.error("Failed to generate AI creative queries:", error);
+    // Fallback to template-based queries
+    return generateTemplateQueries(seedKeyword, market).slice(0, 10);
+  }
+}

@@ -9,6 +9,7 @@ import { generateAndSaveStrategicActions } from "./strategicActionEngine";
 interface BatchTestParams {
   sessionId: number;
   userId: number;
+  projectId: number;
   seedKeywords: SeedKeyword[];
   userApiKeys: Array<Omit<ApiKey, "apiKey"> & { maskedKey: string }>;
   targetEngines: TargetEngine[];
@@ -403,6 +404,22 @@ async function executeBatchTestsInternal(params: BatchTestParams): Promise<void>
       failedCount: failedTests,
       message: `分析完成！成功 ${successfulTests} 筆，失敗 ${failedTests} 筆`,
     });
+    
+    // Send notification to owner
+    try {
+      const { notifyOwner } = await import("./_core/notification");
+      const project = await db.getProjectById(params.projectId);
+      const projectName = project?.projectName || `分析 #${sessionId}`;
+      
+      await notifyOwner({
+        title: `🎉 分析完成：${projectName}`,
+        content: `您的批次分析已經完成！\n\n結果統計：\n- 成功：${successfulTests} 筆\n- 失敗：${failedTests} 筆\n- 總計：${totalTests} 筆\n\n請前往分析結果頁面查看詳細報告。`,
+      });
+      console.log(`[BatchTest] Owner notification sent for session ${sessionId}`);
+    } catch (notifyError) {
+      console.error(`[BatchTest] Failed to send owner notification:`, notifyError);
+      // Don't fail the session if notification fails
+    }
   } catch (error) {
     console.error(`[BatchTest] Fatal error in session ${sessionId}:`, error);
     await db.updateAnalysisSessionStatus(sessionId, "failed");
@@ -422,6 +439,21 @@ async function executeBatchTestsInternal(params: BatchTestParams): Promise<void>
     emitError(sessionId, {
       message: error instanceof Error ? error.message : "未知錯誤",
     });
+    
+    // Send failure notification to owner
+    try {
+      const { notifyOwner } = await import("./_core/notification");
+      const project = await db.getProjectById(params.projectId);
+      const projectName = project?.projectName || `分析 #${sessionId}`;
+      
+      await notifyOwner({
+        title: `⚠️ 分析失敗：${projectName}`,
+        content: `您的批次分析執行失敗。\n\n錯誤訊息：${error instanceof Error ? error.message : "未知錯誤"}\n\n請查看執行日誌以獲取更多詳細資訊。`,
+      });
+      console.log(`[BatchTest] Failure notification sent for session ${sessionId}`);
+    } catch (notifyError) {
+      console.error(`[BatchTest] Failed to send failure notification:`, notifyError);
+    }
     
     throw error;
   }

@@ -1,8 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, Clock, Bell, BellOff } from "lucide-react";
 import { useAnalysisProgress } from "@/hooks/useAnalysisProgress";
+import { useBrowserNotification } from "@/hooks/useBrowserNotification";
+import { Button } from "@/components/ui/button";
+import { useEffect, useRef } from "react";
 
 interface AnalysisProgressCardProps {
   sessionId: number;
@@ -10,6 +13,29 @@ interface AnalysisProgressCardProps {
 
 export function AnalysisProgressCard({ sessionId }: AnalysisProgressCardProps) {
   const { progress, error, isConnected } = useAnalysisProgress(sessionId);
+  const { isSupported, permission, requestPermission, showNotification } = useBrowserNotification();
+  const previousStatusRef = useRef<string | null>(null);
+  
+  // Show notification when analysis completes or fails
+  useEffect(() => {
+    if (!progress) return;
+    
+    // Only trigger notification on status change
+    if (previousStatusRef.current === progress.status) return;
+    previousStatusRef.current = progress.status;
+    
+    if (progress.status === "completed") {
+      showNotification("🎉 分析完成！", {
+        body: `成功 ${progress.successCount} 筆，失敗 ${progress.failedCount} 筆。點擊查看詳細結果。`,
+        tag: `analysis-${sessionId}`,
+      });
+    } else if (progress.status === "failed") {
+      showNotification("⚠️ 分析失敗", {
+        body: "分析執行過程中發生錯誤，請查看執行日誌。",
+        tag: `analysis-${sessionId}`,
+      });
+    }
+  }, [progress, sessionId, showNotification]);
 
   if (!progress && !error) {
     return (
@@ -59,6 +85,33 @@ export function AnalysisProgressCard({ sessionId }: AnalysisProgressCardProps) {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {isSupported && permission === "default" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={requestPermission}
+                className="gap-2"
+              >
+                <Bell className="h-4 w-4" />
+                啟用通知
+              </Button>
+            )}
+            {isSupported && permission === "granted" && (
+              <Badge variant="secondary" className="gap-1">
+                <Bell className="h-3 w-3" />
+                通知已啟用
+              </Badge>
+            )}
+            {isSupported && permission === "denied" && (
+              <Badge variant="outline" className="gap-1">
+                <BellOff className="h-3 w-3" />
+                通知已關閉
+              </Badge>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center justify-between mt-2">
           <div className="flex items-center gap-2">
             {progress.status === "running" && (
               <>

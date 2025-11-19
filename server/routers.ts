@@ -300,6 +300,7 @@ export const appRouter = router({
         executeBatchTests({
           sessionId: input.sessionId,
           userId: ctx.user.id,
+          projectId: project.id,
           seedKeywords,
           userApiKeys,
           targetEngines,

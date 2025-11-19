@@ -1,0 +1,16 @@
+{
+  "query": "SELECT id, status, startedAt, completedAt FROM analysisSessions WHERE id = 90001;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2iyb7T7XBaHHgi3.0b5e78d12b02 --database Wn5966Umo3E3MfrFwb4EY7 --execute SELECT id, status, startedAt, completedAt FROM analysisSessions WHERE id = 90001;",
+  "rows": [
+    {
+      "id": "90001",
+      "status": "running",
+      "startedAt": "2025-11-19 12:48:59",
+      "completedAt": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tstatus\tstartedAt\tcompletedAt\n90001\trunning\t2025-11-19 12:48:59\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 1664
+}

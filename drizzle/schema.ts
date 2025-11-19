@@ -221,3 +221,18 @@ export const apiKeys = mysqlTable("apiKeys", {
 
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type InsertApiKey = typeof apiKeys.$inferInsert;
+
+/**
+ * ExecutionLog - 批次執行日誌（用於除錯和追蹤）
+ */
+export const executionLogs = mysqlTable("executionLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: int("sessionId").notNull(),
+  level: mysqlEnum("level", ["info", "warning", "error"]).notNull(),
+  message: text("message").notNull(),
+  details: json("details").$type<Record<string, any>>(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ExecutionLog = typeof executionLogs.$inferSelect;
+export type InsertExecutionLog = typeof executionLogs.$inferInsert;

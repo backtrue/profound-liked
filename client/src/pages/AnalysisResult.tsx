@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, TrendingUp, MessageSquare, Link as LinkIcon, AlertTriangle, CheckCircle2, Clock, Loader2, FileText } from "lucide-react";
+import { ArrowLeft, TrendingUp, MessageSquare, Link as LinkIcon, AlertTriangle, CheckCircle2, Clock, Loader2, FileText, ScrollText } from "lucide-react";
 import { AnalysisProgressCard } from "@/components/AnalysisProgressCard";
 
 export default function AnalysisResult() {
@@ -74,11 +74,17 @@ export default function AnalysisResult() {
 
   return (
     <div className="container py-8">
-      <div className="mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={() => window.history.back()}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           返回
         </Button>
+        <Link href={`/analysis/${sessionId}/logs`}>
+          <Button variant="outline" size="sm">
+            <ScrollText className="mr-2 h-4 w-4" />
+            查看執行日誌
+          </Button>
+        </Link>
       </div>
 
       <div className="space-y-6">

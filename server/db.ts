@@ -13,7 +13,8 @@ import {
   actionItems, InsertActionItem, ActionItem,
   domainCategories, InsertDomainCategory, DomainCategory,
   apiKeys, InsertApiKey, ApiKey,
-  sarcasmCorpus, InsertSarcasmCorpus, SarcasmCorpus
+  sarcasmCorpus, InsertSarcasmCorpus, SarcasmCorpus,
+  executionLogs, InsertExecutionLog, ExecutionLog
 } from "../drizzle/schema";
 import { encrypt, decrypt, maskApiKey } from "./encryption";
 import { ENV } from './_core/env';
@@ -445,4 +446,32 @@ export async function deleteSarcasmCorpusEntry(id: number, userId: number): Prom
   if (!db) throw new Error("Database not available");
   
   await db.delete(sarcasmCorpus).where(and(eq(sarcasmCorpus.id, id), eq(sarcasmCorpus.createdBy, userId)));
+}
+
+// ============ Execution Log Management ============
+export async function createExecutionLog(log: InsertExecutionLog): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.insert(executionLogs).values(log);
+}
+
+export async function getExecutionLogsBySessionId(sessionId: number): Promise<ExecutionLog[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select()
+    .from(executionLogs)
+    .where(eq(executionLogs.sessionId, sessionId))
+    .orderBy(executionLogs.createdAt);
+}
+
+export async function getExecutionLogsByLevel(sessionId: number, level: "info" | "warning" | "error"): Promise<ExecutionLog[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select()
+    .from(executionLogs)
+    .where(and(eq(executionLogs.sessionId, sessionId), eq(executionLogs.level, level)))
+    .orderBy(executionLogs.createdAt);
 }

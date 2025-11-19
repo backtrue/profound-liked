@@ -328,6 +328,12 @@ export const appRouter = router({
         return db.getAnalysisSessionById(input.sessionId);
       }),
 
+    getExecutionLogs: protectedProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getExecutionLogsBySessionId(input.sessionId);
+      }),
+
     getMetrics: protectedProcedure
       .input(z.object({ sessionId: z.number() }))
       .query(async ({ input }) => {

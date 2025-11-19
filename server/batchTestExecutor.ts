@@ -22,9 +22,41 @@ interface BatchTestParams {
 export async function executeBatchTests(params: BatchTestParams): Promise<void> {
   const { sessionId, userId, seedKeywords, userApiKeys, targetEngines, brandName, competitors } = params;
 
-  try {
-    console.log(`[BatchTest] Starting session ${sessionId} with ${seedKeywords.length} seed keywords`);
+  // Set timeout for the entire batch test (30 minutes)
+  const timeoutMs = 30 * 60 * 1000;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error('Batch test execution timeout (30 minutes)')), timeoutMs);
+  });
 
+  try {
+    await Promise.race([
+      executeBatchTestsInternal(params),
+      timeoutPromise
+    ]);
+  } catch (error) {
+    console.error(`[BatchTest] Session ${sessionId} failed:`, error);
+    await db.updateAnalysisSessionStatus(sessionId, "failed");
+    emitError(sessionId, {
+      message: error instanceof Error ? error.message : String(error)
+    });
+    throw error;
+  }
+}
+
+async function executeBatchTestsInternal(params: BatchTestParams): Promise<void> {
+  const { sessionId, userId, seedKeywords, userApiKeys, targetEngines, brandName, competitors } = params;
+
+  console.log(`[BatchTest] Starting session ${sessionId} with ${seedKeywords.length} seed keywords`);
+  
+  // Log session start
+  await db.createExecutionLog({
+    sessionId,
+    level: "info",
+    message: `批次測試開始：${seedKeywords.length} 個種子關鍵字`,
+    details: { seedKeywordCount: seedKeywords.length, engineCount: targetEngines.length },
+  });
+
+  try {
     // Get all derivative queries for all seed keywords
     const allQueries: Array<{ seedKeywordId: number; queryText: string; queryId: number }> = [];
     
@@ -38,9 +70,22 @@ export async function executeBatchTests(params: BatchTestParams): Promise<void> 
     }
 
     console.log(`[BatchTest] Found ${allQueries.length} derivative queries`);
+    
+    await db.createExecutionLog({
+      sessionId,
+      level: "info",
+      message: `找到 ${allQueries.length} 個衍生問句`,
+      details: { queryCount: allQueries.length },
+    });
 
     if (allQueries.length === 0) {
       await db.updateAnalysisSessionStatus(sessionId, "completed");
+      await db.createExecutionLog({
+        sessionId,
+        level: "warning",
+        message: "沒有問句可測試，分析結束",
+        details: {},
+      });
       console.log(`[BatchTest] No queries to test, marking session as completed`);
       return;
     }
@@ -71,6 +116,12 @@ export async function executeBatchTests(params: BatchTestParams): Promise<void> 
       const apiKey = providerMap.get(provider);
       if (!apiKey) {
         console.log(`[BatchTest] Skipping ${engine.engineName} - no API key configured`);
+        await db.createExecutionLog({
+          sessionId,
+          level: "warning",
+          message: `跳過引擎 ${engine.engineName}：未配置 API Key`,
+          details: { engineName: engine.engineName, provider },
+        });
         continue;
       }
 
@@ -206,6 +257,19 @@ export async function executeBatchTests(params: BatchTestParams): Promise<void> 
           failedTests++;
           console.error(`[BatchTest] ✗ Query ${totalTests}/${allQueries.length * targetEngines.length} failed:`, error);
           
+          // Log error
+          await db.createExecutionLog({
+            sessionId,
+            level: "error",
+            message: `查詢失敗：${query.queryText.substring(0, 50)}...`,
+            details: {
+              queryId: query.queryId,
+              queryText: query.queryText,
+              engineName: engine.engineName,
+              error: error instanceof Error ? error.message : String(error),
+            },
+          });
+          
           // Emit failure progress
           emitProgress(sessionId, {
             status: "running",
@@ -227,6 +291,14 @@ export async function executeBatchTests(params: BatchTestParams): Promise<void> 
     await db.updateAnalysisSessionStatus(sessionId, "completed");
     console.log(`[BatchTest] Session ${sessionId} completed: ${successfulTests} successful, ${failedTests} failed out of ${totalTests} total tests`);
     
+    // Log completion
+    await db.createExecutionLog({
+      sessionId,
+      level: "info",
+      message: `批次測試完成：成功 ${successfulTests} 筆，失敗 ${failedTests} 筆`,
+      details: { totalTests, successfulTests, failedTests },
+    });
+    
     // Generate strategic action recommendations
     try {
       console.log(`[BatchTest] Generating strategic actions for session ${sessionId}...`);
@@ -247,10 +319,20 @@ export async function executeBatchTests(params: BatchTestParams): Promise<void> 
       failedCount: failedTests,
       message: `分析完成！成功 ${successfulTests} 筆，失敗 ${failedTests} 筆`,
     });
-
   } catch (error) {
     console.error(`[BatchTest] Fatal error in session ${sessionId}:`, error);
     await db.updateAnalysisSessionStatus(sessionId, "failed");
+    
+    // Log fatal error
+    await db.createExecutionLog({
+      sessionId,
+      level: "error",
+      message: "批次測試發生致命錯誤",
+      details: {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+    });
     
     // Emit error
     emitError(sessionId, {

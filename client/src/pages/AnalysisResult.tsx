@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, TrendingUp, MessageSquare, Link as LinkIcon, AlertTriangle, CheckCircle2, Clock, Loader2 } from "lucide-react";
+import { AnalysisProgressCard } from "@/components/AnalysisProgressCard";
 
 export default function AnalysisResult() {
   const [, params] = useRoute("/analysis/:id");
@@ -82,6 +83,11 @@ export default function AnalysisResult() {
             </span>
           </div>
         </div>
+
+        {/* Real-time progress for running sessions */}
+        {(session.status === "running" || session.status === "pending") && (
+          <AnalysisProgressCard sessionId={sessionId} />
+        )}
 
         {/* Summary Metrics */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

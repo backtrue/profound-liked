@@ -1,6 +1,7 @@
 import * as db from "./db";
 import { queryEngine } from "./aiEngines";
 import type { SeedKeyword, TargetEngine, ApiKey } from "../drizzle/schema";
+import { emitProgress, emitError } from "./_core/socket";
 
 interface BatchTestParams {
   sessionId: number;
@@ -54,6 +55,7 @@ export async function executeBatchTests(params: BatchTestParams): Promise<void> 
     let totalTests = 0;
     let successfulTests = 0;
     let failedTests = 0;
+    const startTime = Date.now();
 
     for (const engine of targetEngines) {
       // Map engine name to provider
@@ -73,6 +75,24 @@ export async function executeBatchTests(params: BatchTestParams): Promise<void> 
 
       for (const query of allQueries) {
         totalTests++;
+        
+        // Calculate estimated time remaining
+        const elapsedTime = Date.now() - startTime;
+        const avgTimePerQuery = totalTests > 1 ? elapsedTime / (totalTests - 1) : 0;
+        const remainingQueries = (allQueries.length * targetEngines.length) - totalTests;
+        const estimatedTimeRemaining = Math.round(avgTimePerQuery * remainingQueries / 1000); // in seconds
+        
+        // Emit progress update before processing
+        emitProgress(sessionId, {
+          status: "running",
+          currentQuery: totalTests,
+          totalQueries: allQueries.length * targetEngines.length,
+          currentEngine: engine.engineName,
+          successCount: successfulTests,
+          failedCount: failedTests,
+          estimatedTimeRemaining,
+          message: `正在測試：${query.queryText.substring(0, 50)}...`,
+        });
         
         try {
           // Query the engine
@@ -118,12 +138,34 @@ export async function executeBatchTests(params: BatchTestParams): Promise<void> 
           successfulTests++;
           console.log(`[BatchTest] ✓ Query ${totalTests}/${allQueries.length * targetEngines.length}: ${query.queryText.substring(0, 50)}...`);
           
+          // Emit success progress
+          emitProgress(sessionId, {
+            status: "running",
+            currentQuery: totalTests,
+            totalQueries: allQueries.length * targetEngines.length,
+            currentEngine: engine.engineName,
+            successCount: successfulTests,
+            failedCount: failedTests,
+            message: `✓ 完成：${query.queryText.substring(0, 50)}...`,
+          });
+          
           // Add delay to avoid rate limiting
           await delay(1000);
           
         } catch (error) {
           failedTests++;
           console.error(`[BatchTest] ✗ Query ${totalTests}/${allQueries.length * targetEngines.length} failed:`, error);
+          
+          // Emit failure progress
+          emitProgress(sessionId, {
+            status: "running",
+            currentQuery: totalTests,
+            totalQueries: allQueries.length * targetEngines.length,
+            currentEngine: engine.engineName,
+            successCount: successfulTests,
+            failedCount: failedTests,
+            message: `✗ 失敗：${query.queryText.substring(0, 50)}...`,
+          });
           
           // Continue with next query even if one fails
           await delay(500);
@@ -134,10 +176,27 @@ export async function executeBatchTests(params: BatchTestParams): Promise<void> 
     // Update session status
     await db.updateAnalysisSessionStatus(sessionId, "completed");
     console.log(`[BatchTest] Session ${sessionId} completed: ${successfulTests} successful, ${failedTests} failed out of ${totalTests} total tests`);
+    
+    // Emit completion progress
+    emitProgress(sessionId, {
+      status: "completed",
+      currentQuery: totalTests,
+      totalQueries: allQueries.length * targetEngines.length,
+      currentEngine: "",
+      successCount: successfulTests,
+      failedCount: failedTests,
+      message: `分析完成！成功 ${successfulTests} 筆，失敗 ${failedTests} 筆`,
+    });
 
   } catch (error) {
     console.error(`[BatchTest] Fatal error in session ${sessionId}:`, error);
     await db.updateAnalysisSessionStatus(sessionId, "failed");
+    
+    // Emit error
+    emitError(sessionId, {
+      message: error instanceof Error ? error.message : "未知錯誤",
+    });
+    
     throw error;
   }
 }

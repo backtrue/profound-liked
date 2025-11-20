@@ -126,28 +126,99 @@ export async function generateQueries(
         targetMarket: 'TW' | 'JP';
     }
 ) {
-    // This is a placeholder - full implementation would include:
-    // 1. Template-based query generation
-    // 2. AI-creative query generation using LLM
-    // For now, return a simple structure
-
+    // 1. Generate template queries
     const templateQueries = generateTemplateQueries(input.seedKeyword, input.targetMarket);
 
-    // Save to database
-    const allQueries = templateQueries.map(q => ({
-        seedKeywordId: input.seedKeywordId,
-        queryText: q,
-        generationType: 'template' as const,
-    }));
+    // 2. Generate AI creative queries
+    let aiQueries: string[] = [];
+    try {
+        aiQueries = await generateAIQueries(env, input.seedKeyword, input.targetMarket);
+    } catch (error) {
+        console.error('Failed to generate AI queries:', error);
+        // Continue with template queries only
+    }
 
-    await db.insert(derivativeQueries).values(allQueries);
+    // Combine all queries
+    const allQueries = [
+        ...templateQueries.map(q => ({
+            seedKeywordId: input.seedKeywordId,
+            queryText: q,
+            generationType: 'template' as const,
+        })),
+        ...aiQueries.map(q => ({
+            seedKeywordId: input.seedKeywordId,
+            queryText: q,
+            generationType: 'ai_creative' as const,
+        })),
+    ];
+
+    // Save to database
+    if (allQueries.length > 0) {
+        await db.insert(derivativeQueries).values(allQueries);
+    }
 
     return {
         total: allQueries.length,
         template: templateQueries.length,
-        aiCreative: 0,
+        aiCreative: aiQueries.length,
         queries: allQueries,
     };
+}
+
+async function generateAIQueries(
+    env: Env,
+    seedKeyword: string,
+    market: 'TW' | 'JP'
+): Promise<string[]> {
+    const { invokeLLM } = await import('./llm');
+
+    const marketContext = market === 'TW'
+        ? '台灣市場，使用繁體中文'
+        : '日本市場，使用日文';
+
+    const prompt = `你是一個專業的 SEO 和市場研究專家。請為關鍵字「${seedKeyword}」生成 15 個創意搜尋問句。
+
+市場：${marketContext}
+
+要求：
+1. 問句要符合真實用戶的搜尋習慣
+2. 涵蓋不同的搜尋意圖：資訊型、比較型、購買型
+3. 包含長尾關鍵字
+4. 考慮當地文化和語言習慣
+5. 每個問句一行，不要編號
+
+範例格式：
+${seedKeyword} 2025 最新推薦
+${seedKeyword} 和 XX 哪個好
+${seedKeyword} 使用心得分享
+
+請直接輸出 15 個問句，每行一個：`;
+
+    try {
+        const response = await invokeLLM(env, {
+            model: 'gpt-4o-mini',
+            messages: [
+                {
+                    role: 'user',
+                    content: prompt,
+                },
+            ],
+            temperature: 0.8,
+            max_tokens: 1000,
+        });
+
+        // Parse response - split by newlines and filter empty lines
+        const queries = response.content
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0 && !line.match(/^\d+[\.)]/)) // Remove numbered lines
+            .slice(0, 15); // Take first 15
+
+        return queries;
+    } catch (error) {
+        console.error('AI query generation failed:', error);
+        return [];
+    }
 }
 
 function generateTemplateQueries(seedKeyword: string, market: 'TW' | 'JP'): string[] {

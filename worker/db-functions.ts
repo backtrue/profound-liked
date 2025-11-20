@@ -106,6 +106,13 @@ export async function getSeedKeywordsWithCount(db: Database, projectId: number) 
     return keywordsWithCount;
 }
 
+export async function deleteSeedKeyword(db: Database, keywordId: number) {
+    // First delete all derivative queries
+    await db.delete(derivativeQueries).where(eq(derivativeQueries.seedKeywordId, keywordId));
+    // Then delete the keyword itself
+    await db.delete(seedKeywords).where(eq(seedKeywords.id, keywordId));
+}
+
 export async function getDerivativeQueriesBySeedKeywordId(
     db: Database,
     seedKeywordId: number

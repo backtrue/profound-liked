@@ -100,6 +100,14 @@ export const appRouter = router({
                 const db = createDatabase(ctx.env);
                 return dbFunctions.getSeedKeywordsWithCount(db, input.projectId);
             }),
+
+        delete: protectedProcedure
+            .input(z.object({ keywordId: z.number() }))
+            .mutation(async ({ ctx, input }) => {
+                const db = createDatabase(ctx.env);
+                await dbFunctions.deleteSeedKeyword(db, input.keywordId);
+                return { success: true };
+            }),
     }),
 
     // Query generation

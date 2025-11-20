@@ -77,18 +77,13 @@ export async function handleOAuthCallback(c: Context<{ Bindings: Env }>) {
             .setExpirationTime('7d')
             .sign(secret);
 
-        // Set cookie
-        setCookie(c, COOKIE_NAME, token, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'Lax',
-            maxAge: 60 * 60 * 24 * 7, // 7 days
-            path: '/',
-        });
-
-        // Redirect back to frontend
+        // For cross-domain setup (Worker -> Pages), we can't use cookies directly
+        // Instead, pass the token via URL and let the frontend set it
         const frontendUrl = env.FRONTEND_URL || env.OAUTH_SERVER_URL || '/';
-        return c.redirect(frontendUrl);
+        const redirectUrl = new URL(frontendUrl);
+        redirectUrl.searchParams.set('token', token);
+
+        return c.redirect(redirectUrl.toString());
     } catch (error) {
         console.error('OAuth callback error:', error);
         return c.json({ error: 'Authentication failed' }, 500);

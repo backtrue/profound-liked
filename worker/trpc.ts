@@ -35,8 +35,13 @@ export async function createTRPCContext(
     const req = c.req.raw;
     const headers = new Headers();
 
-    // Get session cookie
-    const sessionToken = getCookie(c, COOKIE_NAME);
+    // Try to get token from Authorization header (for cross-domain setup)
+    let sessionToken = c.req.header('Authorization')?.replace('Bearer ', '');
+
+    // Fallback to cookie (for same-domain setup)
+    if (!sessionToken) {
+        sessionToken = getCookie(c, COOKIE_NAME);
+    }
 
     let user: User | null = null;
 

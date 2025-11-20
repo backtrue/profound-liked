@@ -1,3 +1,4 @@
+import React from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
@@ -31,6 +32,25 @@ function Router() {
 }
 
 function App() {
+  // Handle OAuth token from URL parameter
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+
+    if (token) {
+      // Store token in localStorage
+      localStorage.setItem('auth_token', token);
+
+      // Remove token from URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('token');
+      window.history.replaceState({}, '', url.toString());
+
+      // Reload to apply authentication
+      window.location.reload();
+    }
+  }, []);
+
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light">

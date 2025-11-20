@@ -117,7 +117,9 @@ async function exchangeCodeForUserInfo(
     });
 
     if (!tokenResponse.ok) {
-        throw new Error('Failed to exchange code for token');
+        const errorText = await tokenResponse.text();
+        console.error('Token exchange failed:', errorText);
+        throw new Error(`Failed to exchange code for token: ${errorText}`);
     }
 
     const tokenData = await tokenResponse.json() as { access_token: string };

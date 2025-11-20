@@ -35,12 +35,20 @@ export interface Env {
 
 const app = new Hono<{ Bindings: Env }>();
 
-// CORS configuration
+// CORS configuration - allow Pages domain
 app.use('/*', cors({
-  origin: ['*'], // Update with your domain in production
+  origin: (origin) => {
+    // Allow Pages domain and localhost for development
+    if (!origin) return '*';
+    if (origin.includes('pages.dev')) return origin;
+    if (origin.includes('localhost')) return origin;
+    if (origin.includes('127.0.0.1')) return origin;
+    return origin; // Allow all for now, restrict later if needed
+  },
   credentials: true,
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
+  exposeHeaders: ['Set-Cookie'],
 }));
 
 // Health check

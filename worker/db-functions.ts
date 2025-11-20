@@ -195,7 +195,7 @@ ${seedKeyword} 使用心得分享
 請直接輸出 15 個問句，每行一個：`;
 
     try {
-        const response = await invokeLLM(env, {
+        const response = await invokeLLM({
             model: 'gpt-4o-mini',
             messages: [
                 {
@@ -205,13 +205,20 @@ ${seedKeyword} 使用心得分享
             ],
             temperature: 0.8,
             max_tokens: 1000,
-        });
+        }, env);
 
-        // Parse response - split by newlines and filter empty lines
-        const queries = response.content
+        // Parse response - get content from first choice
+        const content = response.choices[0]?.message?.content;
+        if (!content || typeof content !== 'string') {
+            console.error('Invalid LLM response format');
+            return [];
+        }
+
+        // Split by newlines and filter empty lines
+        const queries = content
             .split('\n')
-            .map(line => line.trim())
-            .filter(line => line.length > 0 && !line.match(/^\d+[\.)]/)) // Remove numbered lines
+            .map((line: string) => line.trim())
+            .filter((line: string) => line.length > 0 && !line.match(/^\d+[\.)]/)) // Remove numbered lines
             .slice(0, 15); // Take first 15
 
         return queries;

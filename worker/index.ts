@@ -58,6 +58,23 @@ app.use('/api/trpc/*', async (c) => {
   })(c);
 });
 
+
+// OAuth login initiation
+app.get('/api/oauth/login', async (c) => {
+  const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+
+  const redirectUri = `${c.env.OAUTH_SERVER_URL}/api/oauth/callback`;
+
+  googleAuthUrl.searchParams.set('client_id', c.env.GOOGLE_CLIENT_ID);
+  googleAuthUrl.searchParams.set('redirect_uri', redirectUri);
+  googleAuthUrl.searchParams.set('response_type', 'code');
+  googleAuthUrl.searchParams.set('scope', 'openid email profile');
+  googleAuthUrl.searchParams.set('access_type', 'offline');
+  googleAuthUrl.searchParams.set('prompt', 'consent');
+
+  return c.redirect(googleAuthUrl.toString());
+});
+
 // OAuth callback route
 app.get('/api/oauth/callback', async (c) => {
   const { handleOAuthCallback } = await import('./oauth');

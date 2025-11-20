@@ -37,10 +37,20 @@ queryClient.getMutationCache().subscribe(event => {
   }
 });
 
+// Get API URL from environment variable or use default for development
+const getApiUrl = () => {
+  // In production (Cloudflare Pages), use the Worker URL
+  if (import.meta.env.VITE_API_URL) {
+    return `${import.meta.env.VITE_API_URL}/api/trpc`;
+  }
+  // In development, use relative path (proxied by Vite)
+  return "/api/trpc";
+};
+
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
-      url: "/api/trpc",
+      url: getApiUrl(),
       transformer: superjson,
       fetch(input, init) {
         return globalThis.fetch(input, {

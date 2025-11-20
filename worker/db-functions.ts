@@ -45,10 +45,8 @@ export async function createProject(
         competitors: string[];
     }
 ) {
-    const [project] = await db.insert(projects).values(data);
-    return db.query.projects.findFirst({
-        where: eq(projects.id, project.insertId),
-    });
+    const result = await db.insert(projects).values(data).returning();
+    return result[0];
 }
 
 export async function getProjectById(db: Database, projectId: number) {
@@ -83,10 +81,8 @@ export async function createSeedKeyword(
         searchVolume?: number;
     }
 ) {
-    const [result] = await db.insert(seedKeywords).values(data);
-    return db.query.seedKeywords.findFirst({
-        where: eq(seedKeywords.id, result.insertId),
-    });
+    const result = await db.insert(seedKeywords).values(data).returning();
+    return result[0];
 }
 
 export async function getSeedKeywordsWithCount(db: Database, projectId: number) {
@@ -190,10 +186,8 @@ export async function createAnalysisSession(
         status: 'pending' | 'running' | 'completed' | 'failed';
     }
 ) {
-    const [result] = await db.insert(analysisSessions).values(data);
-    return db.query.analysisSessions.findFirst({
-        where: eq(analysisSessions.id, result.insertId),
-    });
+    const result = await db.insert(analysisSessions).values(data).returning();
+    return result[0];
 }
 
 export async function getAnalysisSessionsByProjectId(db: Database, projectId: number) {
@@ -271,10 +265,8 @@ export async function createSarcasmCorpusEntry(
         createdBy: number;
     }
 ) {
-    const [result] = await db.insert(sarcasmCorpus).values(data);
-    return db.query.sarcasmCorpus.findFirst({
-        where: eq(sarcasmCorpus.id, result.insertId),
-    });
+    const result = await db.insert(sarcasmCorpus).values(data).returning();
+    return result[0];
 }
 
 export async function deleteSarcasmCorpusEntry(
@@ -325,16 +317,14 @@ export async function createApiKey(
     // Encrypt the API key
     const encryptedKey = await encrypt(apiKey, env);
 
-    const [result] = await db.insert(apiKeys).values({
+    const result = await db.insert(apiKeys).values({
         userId,
         provider,
         apiKey: encryptedKey,
         isActive: true,
-    });
+    }).returning();
 
-    const newKey = await db.query.apiKeys.findFirst({
-        where: eq(apiKeys.id, result.insertId),
-    });
+    const newKey = result[0];
 
     if (!newKey) {
         throw new Error('Failed to create API key');

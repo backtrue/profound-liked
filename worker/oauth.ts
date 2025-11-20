@@ -86,8 +86,25 @@ export async function handleOAuthCallback(c: Context<{ Bindings: Env }>) {
             path: '/',
         });
 
-        // Redirect to frontend
-        return c.redirect('/');
+        // Redirect back to frontend
+        // Try to get the origin from Referer header, or use a default
+        const referer = c.req.header('Referer');
+        let redirectUrl = '/';
+
+        if (referer) {
+            try {
+                const refererUrl = new URL(referer);
+                // Only redirect to same domain or known Pages domain
+                if (refererUrl.hostname.includes('pages.dev') ||
+                    refererUrl.hostname === new URL(env.OAUTH_SERVER_URL).hostname) {
+                    redirectUrl = refererUrl.origin;
+                }
+            } catch (e) {
+                // Invalid referer, use default
+            }
+        }
+
+        return c.redirect(redirectUrl);
     } catch (error) {
         console.error('OAuth callback error:', error);
         return c.json({ error: 'Authentication failed' }, 500);

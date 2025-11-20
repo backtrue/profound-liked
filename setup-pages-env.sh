@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Cloudflare Pages 環境變數設置腳本
+# 注意：Wrangler CLI 目前不支持直接設置 Pages 環境變數
+# 您需要在 Cloudflare Dashboard 手動設置
+
+echo "========================================="
+echo "Cloudflare Pages 環境變數設置"
+echo "========================================="
+echo ""
+echo "請在 Cloudflare Dashboard 設置以下環境變數："
+echo ""
+echo "1. 前往: https://dash.cloudflare.com/"
+echo "2. Workers & Pages > omni-market-app > Settings"
+echo "3. 找到 'Environment variables' 區域"
+echo "4. 添加以下變數："
+echo ""
+echo "-----------------------------------"
+echo "變數 1:"
+echo "  Name: VITE_API_URL"
+echo "  Value: https://omni-market-geo-agent-worker.backtrue.workers.dev"
+echo "  Environment: Production and Preview"
+echo ""
+echo "變數 2:"
+echo "  Name: VITE_APP_ID"
+echo "  Value: omni-market-prod"
+echo "  Environment: Production and Preview"
+echo "-----------------------------------"
+echo ""
+echo "5. 保存後，前往 Deployments 標籤"
+echo "6. 點擊最新部署旁的 '...' 按鈕"
+echo "7. 選擇 'Retry deployment'"
+echo ""
+echo "========================================="
+echo "等待 2-3 分鐘後，訪問："
+echo "https://omni-market-app.pages.dev/"
+echo "========================================="

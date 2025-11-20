@@ -20,6 +20,7 @@ export interface Env {
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   OAUTH_SERVER_URL: string;
+  FRONTEND_URL?: string; // Optional: Frontend URL for OAuth redirect
   OWNER_OPEN_ID: string;
   VITE_APP_ID: string;
   ENCRYPTION_KEY: string;

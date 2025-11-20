@@ -1,0 +1,14 @@
+# Cloudflare Workers & D1
+.wrangler/
+wrangler.toml
+
+# Secrets (never commit!)
+SECRETS.md
+.env
+.env.local
+.env.production
+
+# Deployment docs (optional - you can commit these if you want)
+# CLOUDFLARE_DEPLOYMENT.md
+# DEPLOYMENT_CHECKLIST.md
+# ENV_TEMPLATE.md

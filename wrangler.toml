@@ -1,0 +1,23 @@
+name = "omni-market-geo-agent-worker"
+main = "worker/index.ts"
+compatibility_date = "2024-11-01"
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "omni-market-db"
+database_id = "3d4977fa-f8df-40b1-920c-a78529742555"
+migrations_dir = "drizzle/migrations"
+
+# Durable Objects
+[[durable_objects.bindings]]
+name = "SESSION_PROGRESS"
+class_name = "SessionProgress"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["SessionProgress"]
+
+# Environment variables (use wrangler secret for sensitive values)
+[vars]
+NODE_ENV = "production"

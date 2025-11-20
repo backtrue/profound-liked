@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { io, Socket } from "socket.io-client";
 
 interface ProgressData {
   status: "running" | "completed" | "failed";
@@ -27,39 +26,54 @@ export function useAnalysisProgress(sessionId: number | null) {
       return;
     }
 
-    // Create Socket.IO connection
-    const socket: Socket = io({
-      path: "/socket.io/",
-      transports: ["websocket", "polling"],
-    });
+    // Create WebSocket connection to Durable Object
+    const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/ws/${sessionId}?sessionId=${sessionId}`;
+    const ws = new WebSocket(wsUrl);
 
-    socket.on("connect", () => {
-      console.log("[Socket.IO] Connected");
+    ws.onopen = () => {
+      console.log("[WebSocket] Connected");
       setIsConnected(true);
-      
-      // Join the session room
-      socket.emit("join-session", sessionId);
-    });
+    };
 
-    socket.on("disconnect", () => {
-      console.log("[Socket.IO] Disconnected");
+    ws.onclose = () => {
+      console.log("[WebSocket] Disconnected");
       setIsConnected(false);
-    });
+    };
 
-    socket.on("progress", (data: ProgressData) => {
-      console.log("[Socket.IO] Progress update:", data);
-      setProgress(data);
-    });
+    ws.onerror = (event) => {
+      console.error("[WebSocket] Error:", event);
+      setIsConnected(false);
+    };
 
-    socket.on("error", (data: ErrorData) => {
-      console.log("[Socket.IO] Error:", data);
-      setError(data);
-    });
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+
+        if (message.type === 'progress') {
+          console.log("[WebSocket] Progress update:", message.data);
+          setProgress(message.data);
+        } else if (message.type === 'error') {
+          console.log("[WebSocket] Error:", message.data);
+          setError(message.data);
+        } else if (message.type === 'pong') {
+          // Heartbeat response
+        }
+      } catch (err) {
+        console.error("[WebSocket] Failed to parse message:", err);
+      }
+    };
+
+    // Heartbeat to keep connection alive
+    const heartbeat = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'ping' }));
+      }
+    }, 30000); // Every 30 seconds
 
     // Cleanup on unmount
     return () => {
-      socket.emit("leave-session", sessionId);
-      socket.disconnect();
+      clearInterval(heartbeat);
+      ws.close();
     };
   }, [sessionId]);
 

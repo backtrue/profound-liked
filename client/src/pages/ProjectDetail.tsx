@@ -64,14 +64,26 @@ export default function ProjectDetail() {
   const generateQueries = trpc.queryGeneration.generate.useMutation({
     onMutate: (variables) => {
       setGeneratingKeywordId(variables.seedKeywordId);
+      toast.loading("🔄 正在生成問句...\n📝 生成模板問句中...\n🤖 準備 AI 創意問句...", {
+        id: `generating-${variables.seedKeywordId}`,
+        duration: Infinity,
+      });
     },
-    onSuccess: (data) => {
-      toast.success(`已生成 ${data.total} 個測試問句（模板：${data.template}，AI：${data.aiCreative}）`);
+    onSuccess: (data, variables) => {
+      toast.success(
+        `✅ 問句生成完成！\n\n📝 模板問句: ${data.template} 個\n🤖 AI 創意問句: ${data.aiCreative} 個\n📊 總計: ${data.total} 個`,
+        {
+          id: `generating-${variables.seedKeywordId}`,
+          duration: 5000,
+        }
+      );
       refetchKeywords();
       setGeneratingKeywordId(null);
     },
-    onError: (error) => {
-      toast.error(`生成失敗：${error.message}`);
+    onError: (error, variables) => {
+      toast.error(`❌ 生成失敗：${error.message}`, {
+        id: `generating-${variables.seedKeywordId}`,
+      });
       setGeneratingKeywordId(null);
     },
   });

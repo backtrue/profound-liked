@@ -24,6 +24,7 @@ export interface Env {
   OWNER_OPEN_ID: string;
   VITE_APP_ID: string;
   ENCRYPTION_KEY: string;
+  GEMINI_API_KEY?: string; // For AI query generation
 
   // Optional
   BUILT_IN_FORGE_API_URL?: string;

@@ -194,7 +194,10 @@ async function generateAIQueries(
     seedKeyword: string,
     market: 'TW' | 'JP'
 ): Promise<string[]> {
-    const { invokeLLM } = await import('./llm');
+    // Check for Gemini API key
+    if (!env.GEMINI_API_KEY) {
+        throw new Error('GEMINI_API_KEY is not configured');
+    }
 
     const marketContext = market === 'TW'
         ? '台灣市場，使用繁體中文'
@@ -221,21 +224,49 @@ ${seedKeyword} 使用心得分享
     try {
         console.log(`[AI Query Generation] Starting for keyword: ${seedKeyword}`);
 
-        const response = await invokeLLM({
-            messages: [
-                {
-                    role: 'user',
-                    content: prompt,
+        // Call Gemini API directly
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${env.GEMINI_API_KEY}`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
                 },
-            ],
-        }, env);
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: prompt
+                        }]
+                    }],
+                    generationConfig: {
+                        temperature: 0.8,
+                        maxOutputTokens: 1000,
+                    }
+                }),
+            }
+        );
 
-        console.log(`[AI Query Generation] LLM response received`);
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Gemini API error: ${response.status} ${errorText}`);
+        }
 
-        // Parse response - get content from first choice
-        const content = response.choices[0]?.message?.content;
+        const data = await response.json() as {
+            candidates?: Array<{
+                content?: {
+                    parts?: Array<{
+                        text?: string;
+                    }>;
+                };
+            }>;
+        };
+
+        console.log(`[AI Query Generation] Gemini response received`);
+
+        // Extract text from response
+        const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!content || typeof content !== 'string') {
-            console.error('[AI Query Generation] Invalid LLM response format:', JSON.stringify(response));
+            console.error('[AI Query Generation] Invalid Gemini response format:', JSON.stringify(data));
             return [];
         }
 
@@ -263,7 +294,7 @@ ${seedKeyword} 使用心得分享
         if (error instanceof Error) {
             console.error('[AI Query Generation] Error details:', error.message, error.stack);
         }
-        return [];
+        throw error; // Re-throw to show error in toast
     }
 }
 

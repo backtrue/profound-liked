@@ -149,11 +149,14 @@ export async function generateQueries(
 
     // 2. Generate AI creative queries
     let aiQueries: string[] = [];
+    let aiError: string | null = null;
     try {
         aiQueries = await generateAIQueries(env, input.seedKeyword, input.targetMarket);
         console.log(`[Generate Queries] Generated ${aiQueries.length} AI queries`);
     } catch (error) {
-        console.error('[Generate Queries] Failed to generate AI queries:', error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        aiError = errorMessage;
+        console.error('[Generate Queries] Failed to generate AI queries:', errorMessage);
         // Continue with template queries only
     }
 
@@ -181,6 +184,7 @@ export async function generateQueries(
         total: allQueries.length,
         template: templateQueries.length,
         aiCreative: aiQueries.length,
+        aiError,  // Include error message if AI generation failed
         queries: allQueries,
     };
 }

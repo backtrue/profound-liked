@@ -71,13 +71,17 @@ export default function ProjectDetail() {
       });
     },
     onSuccess: (data, variables) => {
-      toast.success(
-        `✅ 問句生成完成！\n\n📝 模板問句: ${data.template} 個\n🤖 AI 創意問句: ${data.aiCreative} 個\n📊 總計: ${data.total} 個`,
-        {
-          id: `generating-${variables.seedKeywordId}`,
-          duration: 5000,
-        }
-      );
+      let message = `✅ 問句生成完成！\n\n📝 模板問句: ${data.template} 個\n🤖 AI 創意問句: ${data.aiCreative} 個\n📊 總計: ${data.total} 個`;
+
+      // Show AI error if present
+      if (data.aiError) {
+        message += `\n\n⚠️ AI 生成失敗：${data.aiError}`;
+      }
+
+      toast.success(message, {
+        id: `generating-${variables.seedKeywordId}`,
+        duration: data.aiError ? 8000 : 5000, // Show longer if there's an error
+      });
       refetchKeywords();
       setGeneratingKeywordId(null);
     },

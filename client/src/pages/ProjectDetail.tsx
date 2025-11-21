@@ -427,6 +427,27 @@ export default function ProjectDetail() {
                         <AnalysisProgressCard sessionId={session.id} />
                       </CardContent>
                     )}
+                    {session.status === "pending" && (
+                      <CardContent>
+                        <Button
+                          onClick={() => runBatchTest.mutate({ sessionId: session.id })}
+                          disabled={runBatchTest.isPending}
+                          className="w-full"
+                        >
+                          {runBatchTest.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              啟動中...
+                            </>
+                          ) : (
+                            <>
+                              <PlayCircle className="mr-2 h-4 w-4" />
+                              開始分析
+                            </>
+                          )}
+                        </Button>
+                      </CardContent>
+                    )}
                     {session.status === "completed" && (
                       <CardContent>
                         <Link href={`/analysis/${session.id}`}>

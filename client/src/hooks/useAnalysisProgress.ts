@@ -27,7 +27,13 @@ export function useAnalysisProgress(sessionId: number | null) {
     }
 
     // Create WebSocket connection to Durable Object
-    const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/ws/${sessionId}?sessionId=${sessionId}`;
+    // Use Worker URL instead of Pages URL
+    const apiBaseUrl = import.meta.env.VITE_API_URL || window.location.origin;
+    const wsProtocol = apiBaseUrl.startsWith('https:') ? 'wss:' : 'ws:';
+    const wsHost = apiBaseUrl.replace(/^https?:\/\//, '');
+    const wsUrl = `${wsProtocol}//${wsHost}/api/ws/${sessionId}?sessionId=${sessionId}`;
+
+    console.log('[WebSocket] Connecting to:', wsUrl);
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {

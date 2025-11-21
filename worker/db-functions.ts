@@ -304,12 +304,69 @@ export async function startBatchTest(
     userId: number,
     sessionId: number
 ) {
-    // TODO: Implement batch test execution
-    // This would involve:
-    // 1. Getting session and project data
-    // 2. Getting user API keys
-    // 3. Starting async execution (using Durable Objects or Queues)
-    throw new Error('Not implemented yet');
+    // 1. Get session data
+    const session = await db
+        .select()
+        .from(analysisSessions)
+        .where(eq(analysisSessions.id, sessionId))
+        .get();
+
+    if (!session) {
+        throw new Error('Session not found');
+    }
+
+    // 2. Get project data
+    const project = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.id, session.projectId))
+        .get();
+
+    if (!project) {
+        throw new Error('Project not found');
+    }
+
+    // 3. Update session status to 'running'
+    await db
+        .update(analysisSessions)
+        .set({
+            status: 'running',
+            startedAt: new Date(),
+        })
+        .where(eq(analysisSessions.id, sessionId))
+        .run();
+
+    // 4. Get Durable Object instance
+    const doId = env.SESSION_PROGRESS.idFromName(`session-${sessionId}`);
+    const stub = env.SESSION_PROGRESS.get(doId);
+
+    // 5. Start batch test execution
+    try {
+        await stub.fetch('https://fake-host/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sessionId,
+                projectId: session.projectId,
+                userId,
+                targetMarket: project.targetMarket,
+            }),
+        });
+
+        return { success: true };
+    } catch (error) {
+        // Update session status to 'failed' if DO initialization fails
+        await db
+            .update(analysisSessions)
+            .set({
+                status: 'failed',
+                completedAt: new Date(),
+            })
+            .where(eq(analysisSessions.id, sessionId))
+            .run();
+
+        throw error;
+    }
 }
 
 export async function getSessionMetrics(db: Database, sessionId: number) {

@@ -191,6 +191,19 @@ export class SessionProgress extends DurableObject {
 
         console.log('[Durable Object] Executing batch test for session:', sessionId);
 
+        // Send initial progress immediately
+        await this.broadcastProgress(sessionId, {
+            status: 'running',
+            currentQuery: 0,
+            totalQueries: 20,
+            currentEngine: 'Initializing',
+            successCount: 0,
+            failedCount: 0,
+            message: 'Starting batch test...',
+        });
+
+        console.log('[Durable Object] Initial progress sent');
+
         // Simulate batch test execution
         // TODO: Implement actual batch test logic
         // For now, just simulate progress updates
@@ -198,6 +211,8 @@ export class SessionProgress extends DurableObject {
         const totalQueries = 20; // This should come from database
 
         for (let i = 1; i <= totalQueries; i++) {
+            console.log(`[Durable Object] Processing query ${i}/${totalQueries}`);
+
             await this.broadcastProgress(sessionId, {
                 status: 'running',
                 currentQuery: i,

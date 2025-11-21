@@ -133,15 +133,27 @@ export async function generateQueries(
         targetMarket: 'TW' | 'JP';
     }
 ) {
+    console.log(`[Generate Queries] Starting for keyword: ${input.seedKeyword} (ID: ${input.seedKeywordId})`);
+
+    // 0. Delete existing queries for this keyword (for regeneration)
+    await db
+        .delete(derivativeQueries)
+        .where(eq(derivativeQueries.seedKeywordId, input.seedKeywordId))
+        .run();
+
+    console.log(`[Generate Queries] Deleted existing queries`);
+
     // 1. Generate template queries
     const templateQueries = generateTemplateQueries(input.seedKeyword, input.targetMarket);
+    console.log(`[Generate Queries] Generated ${templateQueries.length} template queries`);
 
     // 2. Generate AI creative queries
     let aiQueries: string[] = [];
     try {
         aiQueries = await generateAIQueries(env, input.seedKeyword, input.targetMarket);
+        console.log(`[Generate Queries] Generated ${aiQueries.length} AI queries`);
     } catch (error) {
-        console.error('Failed to generate AI queries:', error);
+        console.error('[Generate Queries] Failed to generate AI queries:', error);
         // Continue with template queries only
     }
 
@@ -162,6 +174,7 @@ export async function generateQueries(
     // Save to database
     if (allQueries.length > 0) {
         await db.insert(derivativeQueries).values(allQueries);
+        console.log(`[Generate Queries] Saved ${allQueries.length} queries to database`);
     }
 
     return {
@@ -183,7 +196,7 @@ async function generateAIQueries(
         ? '台灣市場，使用繁體中文'
         : '日本市場，使用日文';
 
-    const prompt = `你是一個專業的 SEO 和市場研究專家。請為關鍵字「${seedKeyword}」生成 15 個創意搜尋問句。
+    const prompt = `你是一個專業的 SEO 和市場研究專家。請為關鍵字「${seedKeyword}」生成 10 個創意搜尋問句。
 
 市場：${marketContext}
 
@@ -192,45 +205,60 @@ async function generateAIQueries(
 2. 涵蓋不同的搜尋意圖：資訊型、比較型、購買型
 3. 包含長尾關鍵字
 4. 考慮當地文化和語言習慣
-5. 每個問句一行，不要編號
+5. 每個問句一行，不要編號，不要任何前綴
 
 範例格式：
 ${seedKeyword} 2025 最新推薦
 ${seedKeyword} 和 XX 哪個好
 ${seedKeyword} 使用心得分享
 
-請直接輸出 15 個問句，每行一個：`;
+請直接輸出 10 個問句，每行一個，不要任何額外說明：`;
 
     try {
+        console.log(`[AI Query Generation] Starting for keyword: ${seedKeyword}`);
+
         const response = await invokeLLM({
-            model: 'gpt-4o-mini',
             messages: [
                 {
                     role: 'user',
                     content: prompt,
                 },
             ],
-            temperature: 0.8,
-            max_tokens: 1000,
         }, env);
+
+        console.log(`[AI Query Generation] LLM response received`);
 
         // Parse response - get content from first choice
         const content = response.choices[0]?.message?.content;
         if (!content || typeof content !== 'string') {
-            console.error('Invalid LLM response format');
+            console.error('[AI Query Generation] Invalid LLM response format:', JSON.stringify(response));
             return [];
         }
+
+        console.log(`[AI Query Generation] Raw content:`, content);
 
         // Split by newlines and filter empty lines
         const queries = content
             .split('\n')
             .map((line: string) => line.trim())
-            .filter((line: string) => line.length > 0 && !line.match(/^\d+[\.)]/)) // Remove numbered lines
-            .slice(0, 15); // Take first 15
+            .filter((line: string) => {
+                // Filter out empty lines, numbered lines, and lines that are just punctuation
+                return line.length > 0
+                    && !line.match(/^\d+[\.):]/)  // Remove numbered lines
+                    && !line.match(/^[-*•]/)      // Remove bullet points
+                    && line.length > 3;           // Remove very short lines
+            })
+            .slice(0, 10); // Take first 10
+
+        console.log(`[AI Query Generation] Generated ${queries.length} queries:`, queries);
 
         return queries;
     } catch (error) {
-        console.error('AI query generation failed:', error);
+        console.error('[AI Query Generation] Failed:', error);
+        // Log more details
+        if (error instanceof Error) {
+            console.error('[AI Query Generation] Error details:', error.message, error.stack);
+        }
         return [];
     }
 }

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, PlayCircle, Loader2, Trash2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { AnalysisProgressCard } from "@/components/AnalysisProgressCard";
+import { QueryList } from "@/components/QueryList";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -338,6 +339,11 @@ export default function ProjectDetail() {
                           </div>
                         </div>
                       </CardHeader>
+                      {hasQueries && (
+                        <CardContent>
+                          <QueryList seedKeywordId={kw.id} />
+                        </CardContent>
+                      )}
                     </Card>
                   );
                 })}

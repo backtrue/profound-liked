@@ -8,9 +8,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, PlayCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, PlayCircle, Loader2, Trash2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { AnalysisProgressCard } from "@/components/AnalysisProgressCard";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function ProjectDetail() {
   const [, params] = useRoute("/project/:id");
@@ -18,6 +28,8 @@ export default function ProjectDetail() {
 
   const [isAddKeywordDialogOpen, setIsAddKeywordDialogOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
+  const [generatingKeywordId, setGeneratingKeywordId] = useState<number | null>(null);
+  const [deleteKeywordId, setDeleteKeywordId] = useState<number | null>(null);
 
   const { data: project, isLoading: projectLoading } = trpc.project.getById.useQuery({ projectId });
   const { data: seedKeywords, refetch: refetchKeywords } = trpc.seedKeyword.listByProject.useQuery({ projectId });
@@ -30,7 +42,7 @@ export default function ProjectDetail() {
       const keywordText = keyword.trim();
       setKeyword("");
       refetchKeywords();
-      
+
       // Auto-generate queries after creating keyword
       if (project) {
         try {
@@ -50,12 +62,29 @@ export default function ProjectDetail() {
   });
 
   const generateQueries = trpc.queryGeneration.generate.useMutation({
+    onMutate: (variables) => {
+      setGeneratingKeywordId(variables.seedKeywordId);
+    },
     onSuccess: (data) => {
       toast.success(`已生成 ${data.total} 個測試問句（模板：${data.template}，AI：${data.aiCreative}）`);
       refetchKeywords();
+      setGeneratingKeywordId(null);
     },
     onError: (error) => {
       toast.error(`生成失敗：${error.message}`);
+      setGeneratingKeywordId(null);
+    },
+  });
+
+  const deleteKeyword = trpc.seedKeyword.delete.useMutation({
+    onSuccess: () => {
+      toast.success("關鍵字已刪除");
+      refetchKeywords();
+      setDeleteKeywordId(null);
+    },
+    onError: (error) => {
+      toast.error(`刪除失敗：${error.message}`);
+      setDeleteKeywordId(null);
     },
   });
 
@@ -63,7 +92,7 @@ export default function ProjectDetail() {
     onSuccess: async (data) => {
       toast.success("分析任務已建立，正在啟動批次測試...");
       refetchSessions();
-      
+
       // Immediately run batch test
       try {
         await runBatchTest.mutateAsync({ sessionId: data.id });
@@ -108,15 +137,19 @@ export default function ProjectDetail() {
     });
   };
 
+  const handleDeleteKeyword = (keywordId: number) => {
+    deleteKeyword.mutate({ keywordId });
+  };
+
   const handleStartAnalysis = () => {
     // Check if there are any queries generated
     const totalQueries = seedKeywords?.reduce((sum, kw) => sum + (kw.queryCount || 0), 0) || 0;
-    
+
     if (totalQueries === 0) {
       toast.error("請先新增關鍵字並生成測試問句");
       return;
     }
-    
+
     createSession.mutate({ projectId });
   };
 
@@ -231,44 +264,71 @@ export default function ProjectDetail() {
               </Card>
             ) : (
               <div className="grid gap-4">
-                {seedKeywords.map((kw) => (
-                  <Card key={kw.id}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <CardTitle className="text-lg">{kw.keyword}</CardTitle>
-                          <CardDescription>
-                            建立於 {new Date(kw.createdAt).toLocaleDateString("zh-TW")}
-                            {kw.queryCount !== undefined && (
-                              <span className="ml-2">
-                                · 已生成 <strong>{kw.queryCount}</strong> 個問句
-                              </span>
+                {seedKeywords.map((kw) => {
+                  const isGenerating = generatingKeywordId === kw.id;
+                  const hasQueries = kw.queryCount && kw.queryCount > 0;
+
+                  return (
+                    <Card key={kw.id}>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1 flex-1">
+                            <CardTitle className="text-lg">{kw.keyword}</CardTitle>
+                            <CardDescription>
+                              建立於 {new Date(kw.createdAt).toLocaleDateString("zh-TW")}
+                              {isGenerating ? (
+                                <span className="ml-2 text-blue-600 font-medium">
+                                  · 生成中...
+                                </span>
+                              ) : hasQueries ? (
+                                <span className="ml-2">
+                                  · 已生成 <strong>{kw.queryCount}</strong> 個問句
+                                </span>
+                              ) : null}
+                            </CardDescription>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {hasQueries && !isGenerating && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleGenerateQueries(kw.id, kw.keyword)}
+                                disabled={generateQueries.isPending}
+                              >
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                重新生成
+                              </Button>
                             )}
-                          </CardDescription>
-                        </div>
-                        {(!kw.queryCount || kw.queryCount === 0) && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleGenerateQueries(kw.id, kw.keyword)}
-                            disabled={generateQueries.isPending}
-                          >
-                            {generateQueries.isPending ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                生成中...
-                              </>
-                            ) : (
-                              <>
+                            {!hasQueries && !isGenerating && (
+                              <Button
+                                size="sm"
+                                onClick={() => handleGenerateQueries(kw.id, kw.keyword)}
+                                disabled={generateQueries.isPending}
+                              >
                                 <PlayCircle className="mr-2 h-4 w-4" />
                                 生成測試問句
-                              </>
+                              </Button>
                             )}
-                          </Button>
-                        )}
-                      </div>
-                    </CardHeader>
-                  </Card>
-                ))}
+                            {isGenerating && (
+                              <Button size="sm" disabled>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                生成中...
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setDeleteKeywordId(kw.id)}
+                              disabled={deleteKeyword.isPending}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </TabsContent>
@@ -326,17 +386,17 @@ export default function ProjectDetail() {
                             session.status === "completed"
                               ? "default"
                               : session.status === "failed"
-                              ? "destructive"
-                              : "secondary"
+                                ? "destructive"
+                                : "secondary"
                           }
                         >
                           {session.status === "completed"
                             ? "已完成"
                             : session.status === "failed"
-                            ? "失敗"
-                            : session.status === "running"
-                            ? "執行中"
-                            : "待處理"}
+                              ? "失敗"
+                              : session.status === "running"
+                                ? "執行中"
+                                : "待處理"}
                         </Badge>
                       </div>
                     </CardHeader>
@@ -361,6 +421,27 @@ export default function ProjectDetail() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteKeywordId !== null} onOpenChange={(open) => !open && setDeleteKeywordId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>確認刪除關鍵字</AlertDialogTitle>
+            <AlertDialogDescription>
+              此操作將刪除該關鍵字及其所有相關的測試問句。此操作無法復原。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteKeywordId && handleDeleteKeyword(deleteKeywordId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              刪除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

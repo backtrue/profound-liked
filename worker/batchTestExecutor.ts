@@ -1,232 +1,349 @@
-/**
- * Batch Test Executor for Cloudflare Workers
- * 
- * Due to Workers CPU time limits, we use Durable Objects to handle long-running batch tests.
- * The main executor triggers the Durable Object, which then processes queries asynchronously.
- */
+import { Env } from './index';
+import { drizzle } from 'drizzle-orm/d1';
+import { eq, and, sql } from 'drizzle-orm';
+import * as schema from '../drizzle/schema';
+import {
+    apiKeys,
+    derivativeQueries,
+    analysisSessions,
+    targetEngines,
+    engineResponses,
+    seedKeywords
+} from '../drizzle/schema';
+import { decrypt } from './encryption';
 
-import type { Database } from './db';
-import type { Env } from './index';
-import { queryEngine } from './aiEngines';
-import { getDecryptedApiKey } from './db-functions';
+export class BatchTestExecutor {
+    private db;
+    private env: Env;
+    private sessionId: number;
+    private projectId: number;
+    private userId: number;
+    private targetMarket: 'TW' | 'JP';
+    private broadcastProgress: (progress: any) => Promise<void>;
 
-export interface BatchTestParams {
-    sessionId: number;
-    userId: number;
-    projectId: number;
-    brandName: string;
-    competitors: string[];
-}
-
-/**
- * Start batch test execution by triggering the Durable Object
- */
-export async function startBatchTest(
-    db: Database,
-    env: Env,
-    userId: number,
-    sessionId: number
-): Promise<void> {
-    // Get session and project data
-    const session = await db.query.analysisSessions.findFirst({
-        where: (analysisSessions, { eq }) => eq(analysisSessions.id, sessionId),
-    });
-
-    if (!session) {
-        throw new Error('Analysis session not found');
+    constructor(
+        env: Env,
+        params: {
+            sessionId: number;
+            projectId: number;
+            userId: number;
+            targetMarket: 'TW' | 'JP';
+        },
+        broadcastProgress: (progress: any) => Promise<void>
+    ) {
+        this.env = env;
+        this.db = drizzle(env.DB, { schema });
+        this.sessionId = params.sessionId;
+        this.projectId = params.projectId;
+        this.userId = params.userId;
+        this.targetMarket = params.targetMarket;
+        this.broadcastProgress = broadcastProgress;
     }
 
-    const project = await db.query.projects.findFirst({
-        where: (projects, { eq }) => eq(projects.id, session.projectId),
-    });
+    async run() {
+        try {
+            // 1. Get enabled API keys
+            const keys = await this.getEnabledApiKeys();
 
-    if (!project) {
-        throw new Error('Project not found');
-    }
+            if (keys.length === 0) {
+                throw new Error('No active API keys found. Please configure at least one AI engine.');
+            }
 
-    // Update session status to running
-    await db.update(db.query.analysisSessions)
-        .set({ status: 'running' })
-        .where((analysisSessions, { eq }) => eq(analysisSessions.id, sessionId));
+            // 2. Get queries to test
+            // Get seed keywords for project and their derivative queries
+            const allQueries = await this.db
+                .select()
+                .from(derivativeQueries)
+                .innerJoin(seedKeywords, eq(derivativeQueries.seedKeywordId, seedKeywords.id))
+                .where(eq(seedKeywords.projectId, this.projectId))
+                .all();
 
-    // Get the Durable Object for this session
-    const id = env.SESSION_PROGRESS.idFromName(`session-${sessionId}`);
-    const stub = env.SESSION_PROGRESS.get(id);
+            if (allQueries.length === 0) {
+                throw new Error('No queries found for this project.');
+            }
 
-    // Trigger batch test execution in the Durable Object
-    // The DO will handle the long-running process
-    await stub.fetch(new Request('https://internal/batch-test', {
-        method: 'POST',
-        body: JSON.stringify({
-            sessionId,
-            userId,
-            projectId: project.id,
-            brandName: project.brandName,
-            competitors: project.competitors || [],
-        }),
-    }));
-}
+            const totalQueries = allQueries.length * keys.length;
+            let processedCount = 0;
+            let successCount = 0;
+            let failedCount = 0;
 
-/**
- * Helper functions for batch test execution
- * These are used by the Durable Object
- */
+            // 3. Execute tests
+            for (const query of allQueries) {
+                for (const key of keys) {
+                    processedCount++;
+                    const currentEngine = key.provider;
 
-// Rate limit configuration
-export const RATE_LIMITS: Record<string, { delayMs: number; maxRetries: number }> = {
-    google: { delayMs: 2500, maxRetries: 5 },
-    openai: { delayMs: 1000, maxRetries: 3 },
-    perplexity: { delayMs: 1000, maxRetries: 3 },
-};
+                    await this.broadcastProgress({
+                        status: 'running',
+                        currentQuery: processedCount,
+                        totalQueries,
+                        currentEngine,
+                        successCount,
+                        failedCount,
+                        message: `Testing query: ${query.derivativeQueries.queryText} on ${currentEngine}...`
+                    });
 
-export function isRetryableError(error: any): boolean {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return errorMessage.includes('503') || errorMessage.includes('429') || errorMessage.includes('overloaded');
-}
+                    try {
+                        const result = await this.executeQuery(query.derivativeQueries.queryText, key);
 
-export function getRetryDelay(error: any, attempt: number): number {
-    const errorMessage = error instanceof Error ? error.message : String(error);
+                        // Save result
+                        await this.saveResult(query.derivativeQueries.id, key.provider, result);
 
-    // Check if error message contains suggested retry delay
-    const match = errorMessage.match(/retry in (\d+)/);
-    if (match && match[1]) {
-        return parseInt(match[1]) * 1000;
-    }
+                        successCount++;
+                    } catch (error) {
+                        console.error(`Failed to execute query ${query.derivativeQueries.id} on ${key.provider}: `, error);
+                        failedCount++;
+                        // Log error to database?
+                    }
 
-    // Exponential backoff: 5s, 10s, 20s, 40s, 80s
-    const baseDelay = 5000;
-    const exponentialDelay = baseDelay * Math.pow(2, attempt);
+                    // Rate limiting delay
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
 
-    // Add random jitter (±20%)
-    const jitter = exponentialDelay * 0.2 * (Math.random() - 0.5);
-    const finalDelay = Math.floor(exponentialDelay + jitter);
+            // 4. Complete
+            await this.db.update(analysisSessions)
+                .set({
+                    status: 'completed',
+                    completedAt: new Date()
+                })
+                .where(eq(analysisSessions.id, this.sessionId))
+                .run();
 
-    // Cap at 2 minutes
-    return Math.min(finalDelay, 120000);
-}
-
-export function mapEngineToProvider(engineName: string): 'openai' | 'perplexity' | 'google' | null {
-    const nameLower = engineName.toLowerCase();
-
-    if (nameLower.includes('chatgpt') || nameLower.includes('openai') || nameLower.includes('gpt')) {
-        return 'openai';
-    }
-
-    if (nameLower.includes('perplexity')) {
-        return 'perplexity';
-    }
-
-    if (nameLower.includes('gemini') || nameLower.includes('google')) {
-        return 'google';
-    }
-
-    return null;
-}
-
-export function classifySourceType(url: string): 'official' | 'ecommerce' | 'forum' | 'media' | 'video' | 'competitor' | 'unknown' {
-    const urlLower = url.toLowerCase();
-
-    // E-commerce
-    if (urlLower.includes('shopee') || urlLower.includes('pchome') || urlLower.includes('momo') ||
-        urlLower.includes('amazon') || urlLower.includes('rakuten')) {
-        return 'ecommerce';
-    }
-
-    // Forum
-    if (urlLower.includes('ptt.cc') || urlLower.includes('dcard') || urlLower.includes('mobile01') ||
-        urlLower.includes('reddit') || urlLower.includes('2ch') || urlLower.includes('5ch')) {
-        return 'forum';
-    }
-
-    // Video
-    if (urlLower.includes('youtube') || urlLower.includes('youtu.be') || urlLower.includes('vimeo')) {
-        return 'video';
-    }
-
-    // Media
-    if (urlLower.includes('news') || urlLower.includes('blog') || urlLower.includes('medium') ||
-        urlLower.includes('udn') || urlLower.includes('chinatimes') || urlLower.includes('ltn')) {
-        return 'media';
-    }
-
-    return 'unknown';
-}
-
-export function detectBrandMentions(
-    text: string,
-    brandName: string,
-    competitors: string[]
-): Array<{
-    brandName: string;
-    context: string;
-    rankPosition: number | null;
-    sentimentScore: number;
-    isSarcastic: boolean;
-}> {
-    const mentions: Array<{
-        brandName: string;
-        context: string;
-        rankPosition: number | null;
-        sentimentScore: number;
-        isSarcastic: boolean;
-    }> = [];
-
-    const allBrands = [brandName, ...competitors];
-
-    for (const brand of allBrands) {
-        const regex = new RegExp(brand, 'gi');
-        const matches = text.match(regex);
-
-        if (matches && matches.length > 0) {
-            const index = text.toLowerCase().indexOf(brand.toLowerCase());
-            const start = Math.max(0, index - 50);
-            const end = Math.min(text.length, index + brand.length + 50);
-            const context = text.substring(start, end);
-
-            const sentimentScore = analyzeSentiment(context);
-            const isSarcastic = detectSarcasm(context);
-
-            mentions.push({
-                brandName: brand,
-                context,
-                rankPosition: null,
-                sentimentScore,
-                isSarcastic,
+            await this.broadcastProgress({
+                status: 'completed',
+                currentQuery: totalQueries,
+                totalQueries,
+                currentEngine: 'Completed',
+                successCount,
+                failedCount,
+                message: 'Batch analysis completed successfully!'
             });
+
+        } catch (error) {
+            console.error('Batch execution failed:', error);
+
+            await this.db.update(analysisSessions)
+                .set({
+                    status: 'failed',
+                    completedAt: new Date(),
+                    errorMessage: error instanceof Error ? error.message : 'Unknown error'
+                })
+                .where(eq(analysisSessions.id, this.sessionId))
+                .run();
+
+            throw error;
         }
     }
 
-    return mentions;
-}
 
-function analyzeSentiment(text: string): number {
-    const positiveWords = ['好', '推薦', '優秀', '棒', '讚', 'excellent', 'great', 'good', 'recommend'];
-    const negativeWords = ['爛', '差', '不推', '雷', 'bad', 'poor', 'terrible', 'avoid'];
+    private async getEnabledApiKeys() {
+        const keys = await this.db
+            .select()
+            .from(apiKeys)
+            .where(and(
+                eq(apiKeys.userId, this.userId),
+                eq(apiKeys.isActive, true)
+            ))
+            .all();
 
-    const textLower = text.toLowerCase();
-    let score = 0;
+        const decryptedKeys: { provider: string, key: string | string[], additionalConfig?: any }[] = [];
+        const valueSerpKeys: string[] = [];
 
-    for (const word of positiveWords) {
-        if (textLower.includes(word)) score += 0.3;
+        for (const k of keys) {
+            try {
+                const decrypted = await decrypt(k.apiKey, this.env);
+                if (k.provider === 'valueserp') {
+                    valueSerpKeys.push(decrypted);
+                } else {
+                    decryptedKeys.push({
+                        provider: k.provider,
+                        key: decrypted,
+                        additionalConfig: k.additionalConfig
+                    });
+                }
+            } catch (e) {
+                console.error(`Failed to decrypt key for ${k.provider}: `, e);
+            }
+        }
+
+        if (valueSerpKeys.length > 0) {
+            decryptedKeys.push({
+                provider: 'valueserp',
+                key: valueSerpKeys,
+                additionalConfig: {}
+            });
+        }
+
+        return decryptedKeys;
     }
 
-    for (const word of negativeWords) {
-        if (textLower.includes(word)) score -= 0.3;
+    private async executeQuery(query: string, key: { provider: string, key: string | string[], additionalConfig?: any }) {
+        // Import dynamically to avoid circular dependency issues
+        const { queryGemini } = await import('./aiEngines');
+
+        switch (key.provider) {
+            case 'google':
+                if (typeof key.key !== 'string') throw new Error('Google API key must be a string.');
+                // Use Gemini instead of Custom Search
+                return queryGemini(key.key, query);
+            case 'perplexity':
+                if (typeof key.key !== 'string') throw new Error('Perplexity API key must be a string.');
+                return this.executePerplexitySearch(query, key.key);
+            case 'openai':
+                if (typeof key.key !== 'string') throw new Error('OpenAI API key must be a string.');
+                return this.executeOpenAI(query, key.key);
+            case 'valueserp':
+                if (!Array.isArray(key.key)) throw new Error('ValueSERP API keys must be an array.');
+                return this.executeValueSerpWithFailover(query, key.key);
+            default:
+                throw new Error(`Unsupported provider: ${key.provider}`);
+        }
     }
 
-    return Math.max(-1, Math.min(1, score));
+    private async executeValueSerpWithFailover(query: string, keys: string[]) {
+        let lastError: Error | null = null;
+
+        // Import dynamically to avoid circular dependency issues if any, though here it's fine
+        const { executeValueSerpSearch } = await import('./aiEngines');
+
+        for (const apiKey of keys) {
+            try {
+                return await executeValueSerpSearch(apiKey, query, this.targetMarket);
+            } catch (error: any) {
+                console.warn(`ValueSERP key failed: ${error.message}`);
+                if (error.message === 'QUOTA_EXCEEDED') {
+                    continue; // Try next key
+                }
+                lastError = error;
+                // Failover on any error to be robust
+                continue;
+            }
+        }
+
+        throw lastError || new Error('All ValueSERP keys failed.');
+    }
+
+
+
+    private async executePerplexitySearch(query: string, apiKey: string) {
+        const response = await fetch('https://api.perplexity.ai/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey} `,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'llama-3.1-sonar-small-128k-online',
+                messages: [
+                    { role: 'system', content: 'You are a helpful research assistant.' },
+                    { role: 'user', content: query }
+                ]
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Perplexity API error: ${response.statusText} `);
+        }
+
+        const data = await response.json() as any;
+        return {
+            content: data.choices[0].message.content,
+            citations: data.citations || []
+        };
+    }
+
+    private async executeOpenAI(query: string, apiKey: string) {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey} `,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'gpt-4o',
+                messages: [
+                    { role: 'system', content: 'You are a helpful assistant.' },
+                    { role: 'user', content: query }
+                ]
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`OpenAI API error: ${response.statusText} `);
+        }
+
+        const data = await response.json() as any;
+        return {
+            content: data.choices[0].message.content,
+            citations: [] // OpenAI doesn't provide citations by default in this endpoint
+        };
+    }
+
+    private async saveResult(queryId: number, provider: string, result: any) {
+        // Map provider to friendly engine name
+        const engineName = provider === 'openai' ? 'ChatGPT' :
+            provider === 'perplexity' ? 'Perplexity' :
+                provider === 'google' ? 'Gemini' :
+                    provider === 'valueserp' ? 'Google' : provider;
+
+        // Let's find or create the engine
+        let engineRecord = await this.db.select().from(targetEngines).where(eq(targetEngines.engineName, engineName)).get();
+        if (!engineRecord) {
+            const ret = await this.db.insert(targetEngines).values({
+                engineName: engineName,
+                isActive: true
+            }).returning().get();
+            engineRecord = ret;
+        }
+
+        const responseId = await this.db.insert(engineResponses).values({
+            sessionId: this.sessionId,
+            queryId: queryId,
+            engineId: engineRecord.id,
+            rawContent: result.content,
+            citations: result.citations,
+            createdAt: new Date()
+        }).returning().get();
+
+        // Perform Brand Analysis
+        try {
+            // Dynamically import to avoid circular dependencies
+            const { analyzeBrandMentions } = await import('./llmBrandAnalysis');
+
+            // Get project details for brand name and competitors
+            const project = await this.db.query.projects.findFirst({
+                where: eq(schema.projects.id, this.projectId)
+            });
+
+            if (project) {
+                const analysis = await analyzeBrandMentions(
+                    this.env,
+                    result.content,
+                    project.brandName,
+                    project.competitors || []
+                );
+
+                if (analysis.mentions && analysis.mentions.length > 0) {
+                    for (const mention of analysis.mentions) {
+                        await this.db.insert(schema.brandMentions).values({
+                            responseId: responseId.id,
+                            brandName: mention.brandName,
+                            sentimentScore: Math.round(mention.sentimentScore * 100), // Convert -1.0~1.0 to -100~100
+                            isSarcastic: mention.isSarcastic,
+                            context: mention.context,
+                            recommendationStrength: mention.recommendationStrength,
+                            mentionContext: mention.mentionContext,
+                            llmAnalysis: JSON.stringify(mention),
+                            createdAt: new Date()
+                        }).run();
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error performing brand analysis:', error);
+            // Don't fail the whole batch if analysis fails
+        }
+    }
 }
 
-function detectSarcasm(text: string): boolean {
-    const sarcasticPatterns = [
-        '呵呵', '笑死', '真香', '反串', '酸', '諷刺',
-        'lol', 'yeah right', 'sure', 'totally'
-    ];
-
-    const textLower = text.toLowerCase();
-    return sarcasticPatterns.some(pattern => textLower.includes(pattern));
-}
-
-export function delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}

@@ -15,14 +15,14 @@ import { toast } from "sonner";
 export default function ApiKeySettings() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
-  const [provider, setProvider] = useState<"openai" | "perplexity" | "google">("openai");
+  const [provider, setProvider] = useState<"openai" | "perplexity" | "google" | "valueserp">("openai");
   const [apiKey, setApiKey] = useState("");
   const [testQuery, setTestQuery] = useState("推薦好用的洗面乳");
-  const [testProvider, setTestProvider] = useState<"openai" | "perplexity" | "google">("openai");
+  const [testProvider, setTestProvider] = useState<"openai" | "perplexity" | "google" | "valueserp">("openai");
   const [testResult, setTestResult] = useState<{ content: string; citations: Array<{ url: string; title?: string }> } | null>(null);
 
   const { data: apiKeys, refetch } = trpc.apiKey.list.useQuery();
-  
+
   const createKey = trpc.apiKey.create.useMutation({
     onSuccess: () => {
       toast.success("API Key 已新增");
@@ -89,6 +89,8 @@ export default function ApiKeySettings() {
         return "Perplexity";
       case "google":
         return "Google (Gemini)";
+      case "valueserp":
+        return "ValueSERP (Google SGE)";
       default:
         return provider;
     }
@@ -102,6 +104,8 @@ export default function ApiKeySettings() {
         return "bg-blue-100 text-blue-800";
       case "google":
         return "bg-orange-100 text-orange-800";
+      case "valueserp":
+        return "bg-purple-100 text-purple-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -175,6 +179,18 @@ export default function ApiKeySettings() {
                 </a>{" "}
                 申請
               </li>
+              <li>
+                <strong>ValueSERP (Google SGE)</strong>：前往{" "}
+                <a
+                  href="https://www.valueserp.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  ValueSERP
+                </a>{" "}
+                申請（支援多組 Key 自動切換）
+              </li>
             </ul>
             <p className="text-xs text-muted-foreground mt-2">
               ⚠️ API Key 將使用 AES-256-GCM 加密儲存，僅用於您的分析任務。
@@ -207,7 +223,7 @@ export default function ApiKeySettings() {
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="testProvider">選擇引擎</Label>
-                    <Select value={testProvider} onValueChange={(value: "openai" | "perplexity" | "google") => setTestProvider(value)}>
+                    <Select value={testProvider} onValueChange={(value: "openai" | "perplexity" | "google" | "valueserp") => setTestProvider(value)}>
                       <SelectTrigger id="testProvider">
                         <SelectValue />
                       </SelectTrigger>
@@ -215,6 +231,7 @@ export default function ApiKeySettings() {
                         <SelectItem value="openai">OpenAI (ChatGPT)</SelectItem>
                         <SelectItem value="perplexity">Perplexity</SelectItem>
                         <SelectItem value="google">Google (Gemini)</SelectItem>
+                        <SelectItem value="valueserp">ValueSERP (Google SGE)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -292,7 +309,7 @@ export default function ApiKeySettings() {
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="provider">AI 引擎</Label>
-                    <Select value={provider} onValueChange={(value: "openai" | "perplexity" | "google") => setProvider(value)}>
+                    <Select value={provider} onValueChange={(value: "openai" | "perplexity" | "google" | "valueserp") => setProvider(value)}>
                       <SelectTrigger id="provider">
                         <SelectValue />
                       </SelectTrigger>
@@ -300,6 +317,7 @@ export default function ApiKeySettings() {
                         <SelectItem value="openai">OpenAI (ChatGPT)</SelectItem>
                         <SelectItem value="perplexity">Perplexity</SelectItem>
                         <SelectItem value="google">Google (Gemini)</SelectItem>
+                        <SelectItem value="valueserp">ValueSERP (Google SGE)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

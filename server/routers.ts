@@ -11,7 +11,7 @@ import { executeBatchTests } from "./batchTestExecutor";
 
 export const appRouter = router({
   system: systemRouter,
-  
+
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
@@ -89,7 +89,7 @@ export const appRouter = router({
       .input(z.object({ projectId: z.number() }))
       .query(async ({ input }) => {
         const keywords = await db.getSeedKeywordsByProjectId(input.projectId);
-        
+
         // Get query count for each keyword
         const keywordsWithCount = await Promise.all(
           keywords.map(async (kw) => {
@@ -100,7 +100,7 @@ export const appRouter = router({
             };
           })
         );
-        
+
         return keywordsWithCount;
       }),
   }),
@@ -115,13 +115,13 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         const { seedKeywordId, seedKeyword, targetMarket } = input;
-        
+
         // Template-based queries (50%)
         const templateQueries = generateTemplateQueries(seedKeyword, targetMarket);
-        
+
         // AI-Creative queries (50%)
         const aiQueries = await generateAICreativeQueries(seedKeyword, targetMarket);
-        
+
         // Combine and save to database
         const allQueries = [
           ...templateQueries.map(q => ({
@@ -135,9 +135,9 @@ export const appRouter = router({
             generationType: "ai_creative" as const,
           })),
         ];
-        
+
         await db.createDerivativeQueries(allQueries);
-        
+
         return {
           total: allQueries.length,
           template: templateQueries.length,
@@ -218,7 +218,7 @@ export const appRouter = router({
 
         // Get all responses and brand mentions for this session
         const responses = await db.getEngineResponsesBySessionId(input.sessionId);
-        
+
         // Get all brand mentions for all responses
         const allBrandMentions: any[] = [];
         for (const response of responses) {
@@ -275,7 +275,7 @@ export const appRouter = router({
 
         // Get all seed keywords and their derivative queries
         const seedKeywords = await db.getSeedKeywordsByProjectId(project.id);
-        
+
         // Get available API keys for the user
         const userApiKeys = await db.getApiKeysByUserId(ctx.user.id);
         if (userApiKeys.length === 0) {
@@ -286,9 +286,10 @@ export const appRouter = router({
         // Create virtual target engines from user's API keys
         const targetEngines = userApiKeys.map((key, index) => ({
           id: index + 1, // Virtual ID
-          engineName: key.provider === 'openai' ? 'ChatGPT' : 
-                      key.provider === 'perplexity' ? 'Perplexity' : 
-                      key.provider === 'google' ? 'Gemini' : key.provider,
+          engineName: key.provider === 'openai' ? 'ChatGPT' :
+            key.provider === 'perplexity' ? 'Perplexity' :
+              key.provider === 'google' ? 'Gemini' :
+                key.provider === 'valueserp' ? 'Google SGE' : key.provider,
           provider: key.provider,
           modelVersion: null,
           isActive: key.isActive,
@@ -340,26 +341,26 @@ export const appRouter = router({
       .query(async ({ input }) => {
         const responses = await db.getEngineResponsesBySessionId(input.sessionId);
         const actionItems = await db.getActionItemsBySessionId(input.sessionId);
-        
+
         // Calculate metrics from responses
         let totalMentions = 0;
         let weightedScore = 0;
         const sentimentBreakdown = { positive: 0, neutral: 0, negative: 0, sarcastic: 0 };
         const citationAnalysis: Record<string, number> = {};
-        
+
         for (const response of responses) {
           const mentions = await db.getBrandMentionsByResponseId(response.id);
           const citations = await db.getCitationSourcesByResponseId(response.id);
-          
+
           totalMentions += mentions.length;
-          
+
           for (const mention of mentions) {
             // Calculate weighted score based on rank
             if (mention.rankPosition === 1) weightedScore += 10;
             else if (mention.rankPosition && mention.rankPosition <= 3) weightedScore += 5;
             else if (mention.rankPosition && mention.rankPosition <= 10) weightedScore += 3;
             else weightedScore += 1;
-            
+
             // Sentiment breakdown
             if (mention.isSarcastic) {
               sentimentBreakdown.sarcastic++;
@@ -371,25 +372,25 @@ export const appRouter = router({
               sentimentBreakdown.neutral++;
             }
           }
-          
-            for (const citation of citations) {
+
+          for (const citation of citations) {
             citationAnalysis[citation.sourceType] = (citationAnalysis[citation.sourceType] || 0) + 1;
           }
         }
-        
+
         // Calculate hallucination stats
         const hallucinationScores = responses
           .filter(r => r.hallucinationScore !== null)
           .map(r => r.hallucinationScore!);
-        
+
         const avgHallucinationScore = hallucinationScores.length > 0
           ? Math.round(hallucinationScores.reduce((sum, score) => sum + score, 0) / hallucinationScores.length)
           : null;
-        
+
         const highRiskCount = hallucinationScores.filter(s => s >= 70).length;
         const mediumRiskCount = hallucinationScores.filter(s => s >= 40 && s < 70).length;
         const lowRiskCount = hallucinationScores.filter(s => s < 40).length;
-        
+
         return {
           sessionId: input.sessionId,
           summaryMetrics: {
@@ -438,7 +439,7 @@ export const appRouter = router({
 
     create: protectedProcedure
       .input(z.object({
-        provider: z.enum(["openai", "perplexity", "google"]),
+        provider: z.enum(["openai", "perplexity", "google", "valueserp"]),
         apiKey: z.string().min(1),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -464,7 +465,7 @@ export const appRouter = router({
 
     test: protectedProcedure
       .input(z.object({
-        provider: z.enum(["openai", "perplexity", "google"]),
+        provider: z.enum(["openai", "perplexity", "google", "valueserp"]),
         query: z.string().min(1),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -475,7 +476,7 @@ export const appRouter = router({
 
         const { queryEngine } = await import("./aiEngines");
         const response = await queryEngine(input.provider, apiKey, input.query);
-        
+
         return {
           content: response.content,
           citations: response.citations || [],
@@ -501,7 +502,7 @@ function generateTemplateQueries(seedKeyword: string, market: "TW" | "JP"): stri
     `${seedKeyword} 好用嗎`,
     `${seedKeyword} 評測`,
   ];
-  
+
   if (market === "JP") {
     templates.push(
       `${seedKeyword} 口コミ`,
@@ -511,15 +512,15 @@ function generateTemplateQueries(seedKeyword: string, market: "TW" | "JP"): stri
       `${seedKeyword} 価格`
     );
   }
-  
+
   return templates;
 }
 
 async function generateAICreativeQueries(seedKeyword: string, market: "TW" | "JP"): Promise<string[]> {
-  const marketContext = market === "TW" 
+  const marketContext = market === "TW"
     ? "你是一個 25 歲注重 CP 值的台灣大學生，經常在 PTT、Dcard 上尋找產品推薦。"
     : "あなたは25歳の日本の大学生で、コストパフォーマンスを重視し、よく口コミサイトで製品レビューを探します。";
-  
+
   const prompt = `${marketContext}
 請針對「${seedKeyword}」這個產品，提出 10 個你會在搜尋引擎或 AI 助手（如 ChatGPT）上詢問的問題。
 這些問題應該：
@@ -536,7 +537,7 @@ async function generateAICreativeQueries(seedKeyword: string, market: "TW" | "JP
         { role: "user", content: prompt },
       ],
     });
-    
+
     const content = response.choices[0]?.message?.content || "";
     const contentStr = typeof content === 'string' ? content : '';
     const queries = contentStr
@@ -544,7 +545,7 @@ async function generateAICreativeQueries(seedKeyword: string, market: "TW" | "JP
       .map((line: string) => line.trim())
       .filter((line: string) => line.length > 0 && !line.match(/^\d+[\.\)]/)) // Remove numbered lines
       .slice(0, 10);
-    
+
     return queries;
   } catch (error) {
     console.error("Failed to generate AI creative queries:", error);

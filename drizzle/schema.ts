@@ -213,8 +213,9 @@ export type InsertDomainCategory = typeof domainCategories.$inferInsert;
 export const apiKeys = sqliteTable("apiKeys", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("userId").notNull(),
-  provider: text("provider", { enum: ["openai", "perplexity", "google"] }).notNull(),
+  provider: text("provider", { enum: ["openai", "perplexity", "google", "valueserp"] }).notNull(),
   apiKey: text("apiKey").notNull(), // Encrypted
+  additionalConfig: text("additionalConfig", { mode: "json" }).$type<Record<string, any>>(), // For extra configs like Google CX
   isActive: integer("isActive", { mode: "boolean" }).default(true).notNull(),
   createdAt: integer("createdAt", { mode: "timestamp" }).default(sql`(unixepoch())`).notNull(),
   updatedAt: integer("updatedAt", { mode: "timestamp" }).default(sql`(unixepoch())`).notNull(),

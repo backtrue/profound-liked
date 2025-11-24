@@ -31,6 +31,7 @@ export default function ProjectDetail() {
   const [keyword, setKeyword] = useState("");
   const [generatingKeywordId, setGeneratingKeywordId] = useState<number | null>(null);
   const [deleteKeywordId, setDeleteKeywordId] = useState<number | null>(null);
+  const [deleteSessionId, setDeleteSessionId] = useState<number | null>(null);
 
   const { data: project, isLoading: projectLoading } = trpc.project.getById.useQuery({ projectId });
   const { data: seedKeywords, refetch: refetchKeywords } = trpc.seedKeyword.listByProject.useQuery({ projectId });
@@ -74,13 +75,13 @@ export default function ProjectDetail() {
       let message = `✅ 問句生成完成！\n\n📝 模板問句: ${data.template} 個\n🤖 AI 創意問句: ${data.aiCreative} 個\n📊 總計: ${data.total} 個`;
 
       // Show AI error if present
-      if (data.aiError) {
-        message += `\n\n⚠️ AI 生成失敗：${data.aiError}`;
+      if ((data as any).aiError) {
+        message += `\n\n⚠️ AI 生成失敗：${(data as any).aiError}`;
       }
 
       toast.success(message, {
         id: `generating-${variables.seedKeywordId}`,
-        duration: data.aiError ? 8000 : 5000, // Show longer if there's an error
+        duration: (data as any).aiError ? 8000 : 5000, // Show longer if there's an error
       });
       refetchKeywords();
       setGeneratingKeywordId(null);
@@ -132,6 +133,18 @@ export default function ProjectDetail() {
     },
   });
 
+  const deleteSession = trpc.analysis.delete.useMutation({
+    onSuccess: () => {
+      toast.success("分析記錄已刪除");
+      refetchSessions();
+      setDeleteSessionId(null);
+    },
+    onError: (error) => {
+      toast.error(`刪除失敗：${error.message}`);
+      setDeleteSessionId(null);
+    },
+  });
+
   const handleAddKeyword = () => {
     if (!keyword.trim()) {
       toast.error("請輸入關鍵字");
@@ -156,6 +169,10 @@ export default function ProjectDetail() {
 
   const handleDeleteKeyword = (keywordId: number) => {
     deleteKeyword.mutate({ keywordId });
+  };
+
+  const handleDeleteSession = (sessionId: number) => {
+    deleteSession.mutate({ sessionId });
   };
 
   const handleStartAnalysis = () => {
@@ -403,23 +420,33 @@ export default function ProjectDetail() {
                             {new Date(session.startedAt).toLocaleString("zh-TW")}
                           </CardDescription>
                         </div>
-                        <Badge
-                          variant={
-                            session.status === "completed"
-                              ? "default"
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant={
+                              session.status === "completed"
+                                ? "default"
+                                : session.status === "failed"
+                                  ? "destructive"
+                                  : "secondary"
+                            }
+                          >
+                            {session.status === "completed"
+                              ? "已完成"
                               : session.status === "failed"
-                                ? "destructive"
-                                : "secondary"
-                          }
-                        >
-                          {session.status === "completed"
-                            ? "已完成"
-                            : session.status === "failed"
-                              ? "失敗"
-                              : session.status === "running"
-                                ? "執行中"
-                                : "待處理"}
-                        </Badge>
+                                ? "失敗"
+                                : session.status === "running"
+                                  ? "執行中"
+                                  : "待處理"}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setDeleteSessionId(session.id)}
+                            disabled={deleteSession.isPending}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </div>
                     </CardHeader>
                     {session.status === "running" && (
@@ -465,7 +492,7 @@ export default function ProjectDetail() {
         </Tabs>
       </div>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Keyword Confirmation Dialog */}
       <AlertDialog open={deleteKeywordId !== null} onOpenChange={(open) => !open && setDeleteKeywordId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -478,6 +505,27 @@ export default function ProjectDetail() {
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteKeywordId && handleDeleteKeyword(deleteKeywordId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              刪除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Session Confirmation Dialog */}
+      <AlertDialog open={deleteSessionId !== null} onOpenChange={(open) => !open && setDeleteSessionId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>確認刪除分析記錄</AlertDialogTitle>
+            <AlertDialogDescription>
+              此操作將刪除該分析記錄及其所有相關的數據（回應、引用、提及等）。此操作無法復原。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteSessionId && handleDeleteSession(deleteSessionId)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               刪除

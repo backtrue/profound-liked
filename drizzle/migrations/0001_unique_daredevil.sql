@@ -1,0 +1,1 @@
+ALTER TABLE `apiKeys` ADD `additionalConfig` text;

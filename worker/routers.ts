@@ -190,6 +190,13 @@ export const appRouter = router({
                 return dbFunctions.generateAnalysisReport(db, ctx.env, input.sessionId);
             }),
 
+        delete: protectedProcedure
+            .input(z.object({ sessionId: z.number() }))
+            .mutation(async ({ ctx, input }) => {
+                const db = createDatabase(ctx.env);
+                return dbFunctions.deleteAnalysisSession(db, input.sessionId);
+            }),
+
         // Sarcasm corpus management
         sarcasmCorpus: router({
             list: protectedProcedure.query(async ({ ctx }) => {
@@ -261,22 +268,24 @@ export const appRouter = router({
 
         create: protectedProcedure
             .input(z.object({
-                provider: z.enum(['openai', 'perplexity', 'google']),
+                provider: z.enum(['openai', 'perplexity', 'google', 'valueserp']),
                 apiKey: z.string().min(1),
+                additionalConfig: z.record(z.any()).optional(),
             }))
             .mutation(async ({ ctx, input }) => {
                 const db = createDatabase(ctx.env);
-                return dbFunctions.createApiKey(db, ctx.env, ctx.user.id, input.provider, input.apiKey);
+                return dbFunctions.createApiKey(db, ctx.env, ctx.user.id, input.provider, input.apiKey, input.additionalConfig);
             }),
 
         update: protectedProcedure
             .input(z.object({
                 keyId: z.number(),
                 apiKey: z.string().min(1),
+                additionalConfig: z.record(z.any()).optional(),
             }))
             .mutation(async ({ ctx, input }) => {
                 const db = createDatabase(ctx.env);
-                await dbFunctions.updateApiKey(db, ctx.env, input.keyId, ctx.user.id, input.apiKey);
+                await dbFunctions.updateApiKey(db, ctx.env, input.keyId, ctx.user.id, input.apiKey, input.additionalConfig);
                 return { success: true };
             }),
 
@@ -290,7 +299,7 @@ export const appRouter = router({
 
         test: protectedProcedure
             .input(z.object({
-                provider: z.enum(['openai', 'perplexity', 'google']),
+                provider: z.enum(['openai', 'perplexity', 'google', 'valueserp']),
                 query: z.string().min(1),
             }))
             .mutation(async ({ ctx, input }) => {

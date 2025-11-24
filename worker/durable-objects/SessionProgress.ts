@@ -1,4 +1,5 @@
 import { DurableObject } from 'cloudflare:workers';
+import { Env } from '../index';
 
 interface ProgressData {
     status: 'running' | 'completed' | 'failed';
@@ -19,9 +20,13 @@ interface ErrorData {
 export class SessionProgress extends DurableObject {
     private sessions: Map<string, WebSocket[]> = new Map();
     private progressData: Map<string, ProgressData> = new Map();
+    private state: DurableObjectState;
+    private env: Env;
 
-    constructor(state: DurableObjectState, env: any) {
+    constructor(state: DurableObjectState, env: Env) {
         super(state, env);
+        this.env = env;
+        this.state = state;
     }
 
     async fetch(request: Request): Promise<Response> {
@@ -40,12 +45,15 @@ export class SessionProgress extends DurableObject {
                 console.log('[Durable Object] Starting batch test for session:', body.sessionId);
 
                 // Start batch test execution (don't await - run in background)
-                this.executeBatchTest(body).catch(error => {
-                    console.error('[Durable Object] Batch test failed:', error);
-                    this.broadcastError(String(body.sessionId), {
-                        message: error instanceof Error ? error.message : 'Unknown error'
-                    });
-                });
+                // Use waitUntil to ensure the background task completes even if the request finishes
+                this.state.waitUntil(
+                    this.executeBatchTest(body).catch(error => {
+                        console.error('[Durable Object] Batch test failed:', error);
+                        this.broadcastError(String(body.sessionId), {
+                            message: error instanceof Error ? error.message : 'Unknown error'
+                        });
+                    })
+                );
 
                 return new Response(JSON.stringify({ success: true }), {
                     headers: { 'Content-Type': 'application/json' }
@@ -191,53 +199,36 @@ export class SessionProgress extends DurableObject {
 
         console.log('[Durable Object] Executing batch test for session:', sessionId);
 
-        // Send initial progress immediately
-        await this.broadcastProgress(sessionId, {
-            status: 'running',
-            currentQuery: 0,
-            totalQueries: 20,
-            currentEngine: 'Initializing',
-            successCount: 0,
-            failedCount: 0,
-            message: 'Starting batch test...',
-        });
+        try {
+            // Dynamically import to avoid circular dependencies if any
+            const { BatchTestExecutor } = await import('../batchTestExecutor');
 
-        console.log('[Durable Object] Initial progress sent');
+            const executor = new BatchTestExecutor(
+                this.env,
+                params,
+                async (progress) => {
+                    await this.broadcastProgress(sessionId, progress);
+                }
+            );
 
-        // Simulate batch test execution
-        // TODO: Implement actual batch test logic
-        // For now, just simulate progress updates
+            await executor.run();
 
-        const totalQueries = 20; // This should come from database
-
-        for (let i = 1; i <= totalQueries; i++) {
-            console.log(`[Durable Object] Processing query ${i}/${totalQueries}`);
-
-            await this.broadcastProgress(sessionId, {
-                status: 'running',
-                currentQuery: i,
-                totalQueries,
-                currentEngine: 'Google',
-                successCount: i - 1,
-                failedCount: 0,
-                message: `Testing query ${i}/${totalQueries}...`,
+        } catch (error) {
+            console.error('[Durable Object] Batch test execution failed:', error);
+            await this.broadcastError(sessionId, {
+                message: error instanceof Error ? error.message : 'Batch test failed'
             });
 
-            // Simulate processing time
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Update status to failed if not already done by executor
+            await this.broadcastProgress(sessionId, {
+                status: 'failed',
+                currentQuery: 0,
+                totalQueries: 0,
+                currentEngine: 'Error',
+                successCount: 0,
+                failedCount: 0,
+                message: error instanceof Error ? error.message : 'Batch test failed'
+            });
         }
-
-        // Mark as completed
-        await this.broadcastProgress(sessionId, {
-            status: 'completed',
-            currentQuery: totalQueries,
-            totalQueries,
-            currentEngine: 'Completed',
-            successCount: totalQueries,
-            failedCount: 0,
-            message: 'Batch test completed successfully!',
-        });
-
-        console.log('[Durable Object] Batch test completed for session:', sessionId);
     }
 }
